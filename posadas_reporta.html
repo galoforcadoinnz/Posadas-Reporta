@@ -3,93 +3,1040 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Posadas Reporta — Prototipo</title>
+<title>Posadas Reporta — Reporte Ciudadano</title>
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <style>
   :root {
-    --bg: #ffffff; --text: #111111; --text-secondary: #555555; --text-muted: #888888;
-    --border: #e0e0e0; --surface: #f5f5f5; --accent: #2563eb; --radius: 10px;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --bg: #0f1117;
+    --bg-elevated: #1a1d26;
+    --bg-card: #222631;
+    --text: #f0f0f0;
+    --text-secondary: #a0a5b1;
+    --text-muted: #6b7280;
+    --border: #2a2e3a;
+    --accent: #ef4444;
+    --accent-hover: #dc2626;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --info: #3b82f6;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
+  [data-theme="light"] {
+    --bg: #ffffff;
+    --bg-elevated: #f8f9fa;
+    --bg-card: #ffffff;
+    --text: #111827;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-  header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); z-index: 10; }
-  header h1 { font-size: 18px; font-weight: 600; }
-  header span { font-size: 12px; color: var(--text-muted); }
-  .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--surface); color: var(--text-secondary); font-weight: 500; }
-  main { flex: 1; display: flex; position: relative; }
-  #map { flex: 1; position: relative; }
-  .sidebar { width: 340px; border-left: 1px solid var(--border); background: var(--bg); display: flex; flex-direction: column; }
-  .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
-  .sidebar-header h2 { font-size: 15px; font-weight: 600; }
-  .sidebar-header p { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
-  .report-list { flex: 1; overflow-y: auto; padding: 12px 16px; }
-  .report-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s ease; background: var(--bg); }
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-elevated);
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 14px;
+  }
+  .logo-text h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+  .logo-text span { font-size: 11px; color: var(--text-muted); }
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .btn-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .btn-icon:hover { background: var(--border); color: var(--text); }
+  .btn-report {
+    padding: 8px 16px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-report:hover { background: var(--accent-hover); }
+  .user-widget {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 4px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .user-widget:hover { border-color: var(--text-muted); }
+  .user-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--border);
+  }
+  .user-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    padding: 6px;
+    min-width: 140px;
+    display: none;
+    z-index: 200;
+  }
+  .user-menu.show { display: block; }
+  .user-menu button {
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    text-align: left;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .user-menu button:hover { background: var(--border); color: var(--text); }
+  .btn-login {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-login:hover { border-color: var(--text-muted); color: var(--text); }
+  main { flex: 1; display: flex; position: relative; overflow: hidden; }
+  .sidebar {
+    width: 380px;
+    border-right: 1px solid var(--border);
+    background: var(--bg-elevated);
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .sidebar-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-header h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .sidebar-header p { font-size: 12px; color: var(--text-muted); }
+  .filters {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .filter-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .filter-chip:hover { border-color: var(--text-muted); }
+  .filter-chip.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .report-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px;
+  }
+  .report-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
   .report-card:hover { border-color: var(--text-muted); box-shadow: var(--shadow); }
-  .report-card .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-  .report-card .cat { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; text-transform: lowercase; }
-  .cat-bache { background: #fef3c7; color: #92400e; }
-  .cat-alumbrado { background: #dbeafe; color: #1e40af; }
-  .cat-inseguridad { background: #fee2e2; color: #991b1b; }
-  .cat-basura { background: #dcfce7; color: #166534; }
-  .cat-otro { background: var(--surface); color: var(--text-secondary); }
-  .report-card .time { font-size: 11px; color: var(--text-muted); }
-  .report-card .desc { font-size: 13px; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .report-card .loc { font-size: 11px; color: var(--text-muted); margin-top: 6px; display: flex; align-items: center; gap: 4px; }
-  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
-  .form-overlay { position: absolute; bottom: 20px; left: 20px; width: 320px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; z-index: 5; display: none; }
-  .form-overlay.show { display: block; animation: slideUp 0.2s ease; }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .form-overlay h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
-  .form-group { margin-bottom: 12px; }
-  .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; }
-  .form-group select, .form-group textarea, .form-group input { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 13px; outline: none; background: var(--bg); color: var(--text); }
-  .form-group select:focus, .form-group textarea:focus, .form-group input:focus { border-color: var(--text); }
-  .form-group textarea { resize: vertical; min-height: 60px; }
-  .form-actions { display: flex; gap: 8px; margin-top: 14px; }
-  .btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
-  .btn-primary { background: var(--text); color: var(--bg); }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-  .map-popup { font-family: var(--font); font-size: 12px; max-width: 200px; }
-  .map-hint { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 18px; border-radius: 20px; font-size: 12px; font-weight: 500; z-index: 5; box-shadow: var(--shadow); pointer-events: none; opacity: 0.9; }
-  @media (max-width: 768px) { main { flex-direction: column; } .sidebar { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--border); } .form-overlay { left: 10px; right: 10px; width: auto; bottom: 10px; } }
+  .report-card.active { border-color: var(--accent); }
+  .report-card .top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .report-card .cat {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: lowercase;
+  }
+  .cat-bache { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .cat-alumbrado { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .cat-inseguridad { background: rgba(239,68,68,0.15); color: #ef4444; }
+  .cat-basura { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .cat-otro { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .status-pendiente { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .status-proceso { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .status-resuelto { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .report-card .photo {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background: var(--bg);
+  }
+  .report-card .desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin-bottom: 10px;
+  }
+  .report-card .meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .report-card .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .action-btn {
+    flex: 1;
+    padding: 7px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.15s;
+  }
+  .action-btn:hover { background: var(--border); color: var(--text); }
+  .action-btn.voted { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.3); }
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state svg {
+    width: 48px; height: 48px;
+    margin-bottom: 14px;
+    opacity: 0.3;
+  }
+  .empty-state p { font-size: 13px; line-height: 1.5; }
+  #map { flex: 1; position: relative; }
+  .map-hint {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-elevated);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 5;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    pointer-events: none;
+    opacity: 0.95;
+  }
+  .form-overlay {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 360px;
+    max-height: 80vh;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    z-index: 50;
+    display: none;
+  }
+  .form-overlay.show { display: block; animation: slideUp 0.25s ease; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  .form-overlay h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+  .form-group select,
+  .form-group textarea,
+  .form-group input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+    background: var(--bg);
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  .form-group select:focus,
+  .form-group textarea:focus,
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .photo-preview {
+    width: 100%;
+    height: 120px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-preview:hover { border-color: var(--accent); color: var(--text-secondary); }
+  .photo-preview.has-image { border-style: solid; border-color: var(--border); }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+  .photo-preview .photo-label { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .form-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn { flex: 1; padding: 11px; border: none; border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .detail-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 320px;
+    max-height: calc(100% - 32px);
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    z-index: 50;
+    display: none;
+  }
+  .detail-panel.show { display: block; animation: slideLeft 0.2s ease; }
+  @keyframes slideLeft { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+  .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .detail-header h3 { font-size: 15px; font-weight: 600; }
+  .detail-close { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .detail-close:hover { color: var(--text); }
+  .detail-photo { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; background: var(--bg); }
+  .detail-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
+  .detail-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
+  .status-selector { display: flex; gap: 6px; margin-bottom: 16px; }
+  .status-option {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    text-align: center;
+    transition: all 0.15s;
+  }
+  .status-option:hover { border-color: var(--text-muted); }
+  .status-option.selected { border-color: currentColor; background: rgba(255,255,255,0.05); }
+  .cluster-marker {
+    background: var(--accent);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    border: 3px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+  }
+  .auth-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 300;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .auth-overlay.show { display: flex; }
+  .auth-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    width: 340px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .auth-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .auth-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; line-height: 1.5; }
+  .auth-card .btn-google {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.15s;
+  }
+  .auth-card .btn-google:hover { background: var(--border); }
+  .auth-card .btn-skip {
+    margin-top: 12px;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .auth-card .btn-skip:hover { color: var(--text-secondary); }
+  @media (max-width: 900px) {
+    .sidebar { position: absolute; bottom: 0; left: 0; right: 0; width: 100%; height: 45%; border-right: none; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; }
+    .form-overlay, .detail-panel { left: 10px; right: 10px; width: auto; bottom: 10px; top: auto; max-height: 70vh; }
+    .detail-panel { top: 10px; bottom: auto; }
+    .user-name { display: none; }
+  }
 </style>
+<base target="_blank">
 </head>
 <body>
-<header><div><h1>Posadas Reporta</h1><span>prototipo v0.1 — datos locales</span></div><span class="badge" id="count-badge">0 reportes</span></header>
-<main>
-  <div id="map"><div class="map-hint">hacé clic en el mapa para reportar un problema</div>
-    <div class="form-overlay" id="form-overlay">
-      <h3>nuevo reporte</h3>
-      <div class="form-group"><label>categoría</label><select id="cat-select"><option value="bache">bache</option><option value="alumbrado">alumbrado público</option><option value="inseguridad">inseguridad</option><option value="basura">basura / limpieza</option><option value="otro">otro</option></select></div>
-      <div class="form-group"><label>descripción</label><textarea id="desc-input" placeholder="¿qué problema hay en este lugar?"></textarea></div>
-      <div class="form-actions"><button class="btn btn-secondary" onclick="cancelReport()">cancelar</button><button class="btn btn-primary" onclick="submitReport()">guardar</button></div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="logo-icon" style="margin:0 auto 16px;width:48px;height:48px;font-size:20px;border-radius:12px;">PR</div>
+    <h2>bienvenido a posadas reporta</h2>
+    <p>iniciá sesión para reportar problemas, votar y seguir el estado de tu barrio.</p>
+    <button class="btn-google" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      continuar con google
+    </button>
+    <button class="btn-skip" onclick="skipAuth()">usar sin iniciar sesión</button>
+  </div>
+</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">PR</div>
+    <div class="logo-text">
+      <h1>Posadas Reporta</h1>
+      <span>reporte ciudadano · posadas, misiones</span>
     </div>
   </div>
-  <aside class="sidebar"><div class="sidebar-header"><h2>reportes recientes</h2><p>en posadas y alrededores</p></div><div class="report-list" id="report-list"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:12px;opacity:0.4"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7"/></svg><p>no hay reportes todavía.<br>hacé clic en el mapa para crear el primero.</p></div></div></aside>
+  <div class="header-actions">
+    <button class="btn-icon" onclick="toggleTheme()" title="cambiar tema">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+    <div id="auth-area">
+      <button class="btn-login" onclick="showAuth()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        iniciar sesión
+      </button>
+    </div>
+    <button class="btn-report" onclick="startReport()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+      reportar
+    </button>
+  </div>
+</header>
+
+<main>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>reportes recientes</h2>
+      <p id="report-count">cargando...</p>
+    </div>
+    <div class="filters" id="filters">
+      <button class="filter-chip active" data-filter="all">todos</button>
+      <button class="filter-chip" data-filter="bache">baches</button>
+      <button class="filter-chip" data-filter="alumbrado">alumbrado</button>
+      <button class="filter-chip" data-filter="inseguridad">inseguridad</button>
+      <button class="filter-chip" data-filter="basura">basura</button>
+      <button class="filter-chip" data-filter="otro">otros</button>
+    </div>
+    <div class="report-list" id="report-list"></div>
+  </aside>
+
+  <div id="map">
+    <div class="map-hint">hacé clic en el mapa para reportar un problema</div>
+
+    <div class="form-overlay" id="form-overlay">
+      <h3>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        nuevo reporte
+      </h3>
+      <div class="form-group">
+        <label>categoría</label>
+        <select id="cat-select">
+          <option value="bache">bache</option>
+          <option value="alumbrado">alumbrado público</option>
+          <option value="inseguridad">inseguridad</option>
+          <option value="basura">basura / limpieza</option>
+          <option value="otro">otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>foto (opcional)</label>
+        <div class="photo-preview" id="photo-preview" onclick="document.getElementById('photo-input').click()">
+          <div class="photo-label">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <span>tocá para subir una foto</span>
+          </div>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+      </div>
+      <div class="form-group">
+        <label>descripción</label>
+        <textarea id="desc-input" placeholder="¿qué problema hay en este lugar?"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="cancelReport()">cancelar</button>
+        <button class="btn btn-primary" onclick="submitReport()">guardar reporte</button>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-header">
+        <span class="cat" id="detail-cat"></span>
+        <button class="detail-close" onclick="closeDetail()">×</button>
+      </div>
+      <img class="detail-photo" id="detail-photo" style="display:none">
+      <div class="detail-meta" id="detail-meta"></div>
+      <div class="detail-desc" id="detail-desc"></div>
+      <label style="font-size:11px;color:var(--text-muted);margin-bottom:6px;display:block;font-weight:500;">estado del reporte</label>
+      <div class="status-selector" id="status-selector"></div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="shareWhatsApp()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          compartir
+        </button>
+        <button class="btn btn-primary" onclick="voteReport()" id="vote-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+          me pasa (<span id="vote-count">0</span>)
+        </button>
+      </div>
+    </div>
+  </div>
 </main>
+
 <script>
-const POSADAS_CENTER = [-55.9005, -27.3678]; const STORAGE_KEY = 'posadas_reporta_v1';
-let reports = []; let tempCoords = null; let markers = [];
-const map = new maplibregl.Map({ container: 'map', style: { version: 8, sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenStreetMap contributors' } }, layers: [{ id: 'osm', type: 'raster', source: 'osm' }] }, center: POSADAS_CENTER, zoom: 13 });
+// ============================================================
+// FIREBASE CONFIG — YA CONFIGURADO CON TUS DATOS
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyCcSA4wuNZOlUtQA9w4myh-_B9mdQFBPBk",
+  authDomain: "posadas-reporta.firebaseapp.com",
+  projectId: "posadas-reporta",
+  storageBucket: "posadas-reporta.firebasestorage.app",
+  messagingSenderId: "330492047543",
+  appId: "1:330492047543:web:2245662e7c008500ae9d32"
+};
+
+let auth = null;
+let currentUser = null;
+let isAnonymous = true;
+
+firebase.initializeApp(firebaseConfig);
+auth = firebase.auth();
+auth.onAuthStateChanged((user) => {
+  if (user) {
+    currentUser = user;
+    isAnonymous = false;
+    updateAuthUI();
+  } else {
+    currentUser = null;
+    isAnonymous = true;
+    updateAuthUI();
+  }
+});
+
+function signInGoogle() {
+  if (!auth) { alert('Firebase no está configurado.'); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch((error) => {
+    console.error(error);
+    alert('Error al iniciar sesión: ' + error.message);
+  });
+}
+
+function signOut() {
+  if (!auth) return;
+  auth.signOut();
+}
+
+function skipAuth() {
+  document.getElementById('auth-overlay').classList.remove('show');
+}
+
+function showAuth() {
+  document.getElementById('auth-overlay').classList.add('show');
+}
+
+function updateAuthUI() {
+  const area = document.getElementById('auth-area');
+  if (currentUser) {
+    area.innerHTML = `
+      <div class="user-widget" onclick="toggleUserMenu()">
+        <img class="user-avatar" src="${currentUser.photoURL || 'https://ui-avatars.com/api/?name='+encodeURIComponent(currentUser.displayName || 'User')+'&background=ef4444&color=fff'}" alt="">
+        <span class="user-name">${currentUser.displayName || currentUser.email}</span>
+        <div class="user-menu" id="user-menu">
+          <button onclick="event.stopPropagation(); signOut()">cerrar sesión</button>
+        </div>
+      </div>`;
+    document.getElementById('auth-overlay').classList.remove('show');
+  } else {
+    area.innerHTML = `<button class="btn-login" onclick="showAuth()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>iniciar sesión</button>`;
+  }
+}
+
+function toggleUserMenu() {
+  const menu = document.getElementById('user-menu');
+  if (menu) menu.classList.toggle('show');
+}
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('user-menu');
+  if (menu && !e.target.closest('.user-widget')) menu.classList.remove('show');
+});
+
+function getUserId() {
+  return currentUser ? currentUser.uid : 'anonymous_' + (localStorage.getItem('anon_id') || (localStorage.setItem('anon_id', 'anon_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('anon_id')));
+}
+
+// ============================================================
+// APP
+// ============================================================
+const POSADAS_CENTER = [-55.9005, -27.3678];
+const STORAGE_KEY = 'posadas_reporta_v3';
+
+let reports = [];
+let tempCoords = null;
+let tempPhoto = null;
+let currentFilter = 'all';
+let selectedReportId = null;
+let clusterIndex = null;
+let clusterMarkers = [];
+
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors'
+      }
+    },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+  },
+  center: POSADAS_CENTER,
+  zoom: 13
+});
+
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
-map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true }), 'top-right');
-function loadReports() { const raw = localStorage.getItem(STORAGE_KEY); if (raw) { try { reports = JSON.parse(raw); renderAll(); } catch(e) {} } }
+map.addControl(new maplibregl.GeolocateControl({
+  positionOptions: { enableHighAccuracy: true },
+  trackUserLocation: true
+}), 'top-right');
+
+function updateClusters() {
+  const filtered = currentFilter === 'all' ? reports : reports.filter(r => r.category === currentFilter);
+  const points = filtered.map(r => ({
+    type: 'Feature',
+    properties: { id: r.id, cluster: false },
+    geometry: { type: 'Point', coordinates: [r.lng, r.lat] }
+  }));
+  clusterIndex = new Supercluster({ radius: 60, maxZoom: 16, minPoints: 2 });
+  clusterIndex.load(points);
+  renderClusters();
+}
+
+function renderClusters() {
+  clusterMarkers.forEach(m => m.remove());
+  clusterMarkers = [];
+  const bounds = map.getBounds();
+  const zoom = Math.floor(map.getZoom());
+  const clusters = clusterIndex.getClusters([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()], zoom);
+
+  clusters.forEach(cluster => {
+    const [lng, lat] = cluster.geometry.coordinates;
+    const el = document.createElement('div');
+    if (cluster.properties.cluster) {
+      const count = cluster.properties.point_count;
+      const size = Math.min(20 + count * 3, 50);
+      el.className = 'cluster-marker';
+      el.style.width = size + 'px';
+      el.style.height = size + 'px';
+      el.textContent = count;
+      el.addEventListener('click', () => {
+        const expansionZoom = clusterIndex.getClusterExpansionZoom(cluster.properties.cluster_id);
+        map.flyTo({ center: [lng, lat], zoom: expansionZoom, duration: 500 });
+      });
+    } else {
+      const r = reports.find(x => x.id === cluster.properties.id);
+      if (!r) return;
+      const colors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', otro: '#9ca3af' };
+      el.style.cssText = 'width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;background:'+(colors[r.category]||colors.otro);
+      el.addEventListener('click', () => { selectReport(r.id); });
+    }
+    const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map);
+    clusterMarkers.push(marker);
+  });
+}
+
+map.on('moveend', renderClusters);
+map.on('zoomend', renderClusters);
+
+function loadReports() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) { try { reports = JSON.parse(raw); } catch(e) {} }
+}
 function saveReports() { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); }
-map.on('click', (e) => { tempCoords = [e.lngLat.lng, e.lngLat.lat]; document.getElementById('form-overlay').classList.add('show'); document.getElementById('desc-input').focus(); });
-function cancelReport() { document.getElementById('form-overlay').classList.remove('show'); tempCoords = null; document.getElementById('cat-select').value = 'bache'; document.getElementById('desc-input').value = ''; }
-function submitReport() { const cat = document.getElementById('cat-select').value; const desc = document.getElementById('desc-input').value.trim() || 'sin descripción'; if (!tempCoords) return; reports.unshift({ id: Date.now(), lat: tempCoords[1], lng: tempCoords[0], category: cat, description: desc, createdAt: new Date().toISOString() }); saveReports(); renderAll(); cancelReport(); }
-function renderAll() { renderMarkers(); renderList(); document.getElementById('count-badge').textContent = reports.length + ' reporte' + (reports.length !== 1 ? 's' : ''); }
-function renderMarkers() { markers.forEach(m => m.remove()); markers = []; const colors = { bache: '#f59e0b', alumbrado: '#2563eb', inseguridad: '#dc2626', basura: '#16a34a', otro: '#6b7280' }; reports.forEach(r => { const el = document.createElement('div'); el.style.cssText = 'width:18px;height:18px;background:'+(colors[r.category]||colors.otro)+';border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);cursor:pointer;'; const popup = new maplibregl.Popup({ offset: 8 }).setHTML('<div class="map-popup"><strong style="text-transform:capitalize">'+r.category+'</strong><div style="color:#555;margin:3px 0">'+escapeHtml(r.description)+'</div><div style="color:#888;font-size:11px">'+formatDate(r.createdAt)+'</div></div>'); const marker = new maplibregl.Marker({ element: el }).setLngLat([r.lng, r.lat]).setPopup(popup).addTo(map); el.addEventListener('click', () => highlightReport(r.id)); markers.push(marker); }); }
-function renderList() { const container = document.getElementById('report-list'); if (reports.length === 0) { container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:12px;opacity:0.4"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7"/></svg><p>no hay reportes todavía.<br>hacé clic en el mapa para crear el primero.</p></div>'; return; } container.innerHTML = reports.map(r => '<div class="report-card" data-id="'+r.id+'" onclick="flyToReport('+r.id+')"><div class="top"><span class="cat cat-'+r.category+'">'+r.category+'</span><span class="time">'+formatDate(r.createdAt)+'</span></div><div class="desc">'+escapeHtml(r.description)+'</div><div class="loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'+r.lat.toFixed(4)+', '+r.lng.toFixed(4)+'</div></div>').join(''); }
-function flyToReport(id) { const r = reports.find(x => x.id === id); if (!r) return; map.flyTo({ center: [r.lng, r.lat], zoom: 16, duration: 800 }); highlightReport(id); }
-function highlightReport(id) { document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active')); const card = document.querySelector('.report-card[data-id="'+id+'"]'); if (card) { card.classList.add('active'); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
-function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-function formatDate(iso) { const d = new Date(iso); return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
-if (!localStorage.getItem(STORAGE_KEY + '_seeded')) { const demo = [{ id: 1, lat: -27.3621, lng: -55.8934, category: 'bache', description: 'bache grande en calle bolívar y urquiza, peligroso para motos', createdAt: new Date(Date.now() - 86400000 * 2).toISOString() }, { id: 2, lat: -27.3712, lng: -55.9056, category: 'alumbrado', description: 'lamparita quemada hace 3 semanas, calle muy oscura', createdAt: new Date(Date.now() - 86400000 * 5).toISOString() }, { id: 3, lat: -27.3589, lng: -55.8887, category: 'basura', description: 'contenedor desbordado, hace mal olor', createdAt: new Date(Date.now() - 86400000 * 1).toISOString() }]; reports = demo; saveReports(); localStorage.setItem(STORAGE_KEY + '_seeded', 'true'); renderAll(); } else { loadReports(); }
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+}
+
+function startReport() {
+  if (!currentUser && !isAnonymous) { showAuth(); return; }
+  document.querySelector('.map-hint').textContent = 'hacé clic en el mapa para ubicar el problema';
+  map.once('click', (e) => {
+    tempCoords = [e.lngLat.lng, e.lngLat.lat];
+    document.getElementById('form-overlay').classList.add('show');
+    document.getElementById('desc-input').focus();
+    document.querySelector('.map-hint').textContent = 'hacé clic en el mapa para reportar un problema';
+  });
+}
+
+map.on('click', (e) => {
+  if (!document.getElementById('form-overlay').classList.contains('show') && !selectedReportId) {
+    tempCoords = [e.lngLat.lng, e.lngLat.lat];
+    document.getElementById('form-overlay').classList.add('show');
+    document.getElementById('desc-input').focus();
+  }
+});
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    tempPhoto = ev.target.result;
+    const preview = document.getElementById('photo-preview');
+    preview.innerHTML = '<img src="'+tempPhoto+'">';
+    preview.classList.add('has-image');
+  };
+  reader.readAsDataURL(file);
+}
+
+function cancelReport() {
+  document.getElementById('form-overlay').classList.remove('show');
+  tempCoords = null; tempPhoto = null;
+  document.getElementById('cat-select').value = 'bache';
+  document.getElementById('desc-input').value = '';
+  const preview = document.getElementById('photo-preview');
+  preview.classList.remove('has-image');
+  preview.innerHTML = '<div class="photo-label"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>tocá para subir una foto</span></div>';
+}
+
+function submitReport() {
+  const cat = document.getElementById('cat-select').value;
+  const desc = document.getElementById('desc-input').value.trim() || 'sin descripción';
+  if (!tempCoords) return;
+  const report = {
+    id: Date.now(),
+    lat: tempCoords[1],
+    lng: tempCoords[0],
+    category: cat,
+    description: desc,
+    photo: tempPhoto,
+    status: 'pendiente',
+    votes: 0,
+    votedBy: [],
+    createdAt: new Date().toISOString()
+  };
+  reports.unshift(report);
+  saveReports();
+  renderAll();
+  cancelReport();
+  selectReport(report.id);
+}
+
+document.getElementById('filters').addEventListener('click', (e) => {
+  if (!e.target.classList.contains('filter-chip')) return;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  e.target.classList.add('active');
+  currentFilter = e.target.dataset.filter;
+  renderAll();
+});
+
+function renderAll() {
+  updateClusters();
+  renderList();
+  const count = (currentFilter === 'all' ? reports : reports.filter(r => r.category === currentFilter)).length;
+  document.getElementById('report-count').textContent = count + ' reporte' + (count !== 1 ? 's' : '') + (currentFilter !== 'all' ? ' · ' + currentFilter : '');
+}
+
+function renderList() {
+  const container = document.getElementById('report-list');
+  const filtered = currentFilter === 'all' ? [...reports] : reports.filter(r => r.category === currentFilter);
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:12px;opacity:0.3"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7"/></svg><p>no hay reportes en esta categoría.<br>hacé clic en el mapa para crear uno.</p></div>';
+    return;
+  }
+  const uid = getUserId();
+  container.innerHTML = filtered.map(r => {
+    const statusClass = 'status-' + r.status;
+    const statusText = { pendiente: 'pendiente', proceso: 'en proceso', resuelto: 'resuelto' }[r.status] || r.status;
+    const hasVoted = r.votedBy.includes(uid);
+    return `<div class="report-card ${selectedReportId === r.id ? 'active' : ''}" data-id="${r.id}" onclick="selectReport(${r.id})">
+      <div class="top">
+        <span class="cat cat-${r.category}">${r.category}</span>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+      </div>
+      ${r.photo ? '<img class="photo" src="'+r.photo+'">' : ''}
+      <div class="desc">${escapeHtml(r.description)}</div>
+      <div class="meta">
+        <span>${formatDate(r.createdAt)}</span>
+        <span>${r.votes} voto${r.votes !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="actions">
+        <button class="action-btn ${hasVoted ? 'voted' : ''}" onclick="event.stopPropagation(); voteReportId(${r.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
+          me pasa (${r.votes})
+        </button>
+        <button class="action-btn" onclick="event.stopPropagation(); shareReportId(${r.id})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          compartir
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectReport(id) {
+  selectedReportId = id;
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
+  const card = document.querySelector(`.report-card[data-id="${id}"]`);
+  if (card) card.classList.add('active');
+  const catColors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', otro: '#9ca3af' };
+  const catEl = document.getElementById('detail-cat');
+  catEl.textContent = r.category;
+  catEl.className = 'cat cat-' + r.category;
+  catEl.style.cssText = 'display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:lowercase;background:'+catColors[r.category]+'15;color:'+(catColors[r.category]||'#9ca3af');
+  const photoEl = document.getElementById('detail-photo');
+  if (r.photo) { photoEl.src = r.photo; photoEl.style.display = 'block'; }
+  else { photoEl.style.display = 'none'; }
+  document.getElementById('detail-meta').textContent = formatDate(r.createdAt) + ' · ' + r.lat.toFixed(4) + ', ' + r.lng.toFixed(4);
+  document.getElementById('detail-desc').textContent = r.description;
+  document.getElementById('vote-count').textContent = r.votes;
+  const uid = getUserId();
+  const hasVoted = r.votedBy.includes(uid);
+  const voteBtn = document.getElementById('vote-btn');
+  voteBtn.className = 'btn btn-primary' + (hasVoted ? ' voted' : '');
+  voteBtn.style.background = hasVoted ? 'rgba(239,68,68,0.1)' : '';
+  voteBtn.style.color = hasVoted ? '#ef4444' : '';
+  voteBtn.style.borderColor = hasVoted ? 'rgba(239,68,68,0.3)' : '';
+  const statusSel = document.getElementById('status-selector');
+  const statuses = [
+    { key: 'pendiente', label: 'pendiente', color: '#f59e0b' },
+    { key: 'proceso', label: 'en proceso', color: '#3b82f6' },
+    { key: 'resuelto', label: 'resuelto', color: '#22c55e' }
+  ];
+  statusSel.innerHTML = statuses.map(s => 
+    `<button class="status-option ${r.status === s.key ? 'selected' : ''}" style="color:${s.color};border-color:${r.status === s.key ? s.color : ''}" onclick="setStatus('${s.key}')">${s.label}</button>`
+  ).join('');
+  document.getElementById('detail-panel').classList.add('show');
+  map.flyTo({ center: [r.lng, r.lat], zoom: 16, duration: 600 });
+}
+
+function closeDetail() {
+  selectedReportId = null;
+  document.getElementById('detail-panel').classList.remove('show');
+  document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
+}
+
+function setStatus(status) {
+  const r = reports.find(x => x.id === selectedReportId);
+  if (!r) return;
+  r.status = status;
+  saveReports();
+  renderAll();
+  selectReport(selectedReportId);
+}
+
+function voteReport() {
+  if (!selectedReportId) return;
+  voteReportId(selectedReportId);
+}
+
+function voteReportId(id) {
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  const uid = getUserId();
+  const idx = r.votedBy.indexOf(uid);
+  if (idx === -1) { r.votedBy.push(uid); r.votes++; }
+  else { r.votedBy.splice(idx, 1); r.votes--; }
+  saveReports();
+  renderAll();
+  if (selectedReportId === id) selectReport(id);
+}
+
+function shareReportId(id) {
+  const r = reports.find(x => x.id === id);
+  if (!r) return;
+  const text = encodeURIComponent('Reporte en Posadas: ' + r.description + ' (' + r.category + ') — vía Posadas Reporta');
+  window.open('https://wa.me/?text=' + text, '_blank');
+}
+
+function shareWhatsApp() {
+  if (!selectedReportId) return;
+  shareReportId(selectedReportId);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+if (!localStorage.getItem(STORAGE_KEY + '_seeded_v3')) {
+  const demo = [
+    { id: 1, lat: -27.3621, lng: -55.8934, category: 'bache', description: 'bache grande en calle bolívar y urquiza, peligroso para motos', photo: null, status: 'pendiente', votes: 4, votedBy: [], createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+    { id: 2, lat: -27.3712, lng: -55.9056, category: 'alumbrado', description: 'lamparita quemada hace 3 semanas, calle muy oscura', photo: null, status: 'proceso', votes: 7, votedBy: [], createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
+    { id: 3, lat: -27.3589, lng: -55.8887, category: 'basura', description: 'contenedor desbordado, hace mal olor', photo: null, status: 'pendiente', votes: 2, votedBy: [], createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
+    { id: 4, lat: -27.3655, lng: -55.8980, category: 'inseguridad', description: 'falta de iluminación en la plaza, varios vecinos reportaron robos', photo: null, status: 'pendiente', votes: 12, votedBy: [], createdAt: new Date(Date.now() - 86400000 * 3).toISOString() },
+    { id: 5, lat: -27.3600, lng: -55.8950, category: 'bache', description: 'varios pozos en la cuadra, rompió una cubierta', photo: null, status: 'resuelto', votes: 8, votedBy: [], createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
+  ];
+  reports = demo;
+  saveReports();
+  localStorage.setItem(STORAGE_KEY + '_seeded_v3', 'true');
+  renderAll();
+} else {
+  loadReports();
+  renderAll();
+}
 </script>
 </body>
 </html>
