@@ -3,319 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Posadas Reporta — Reporte Ciudadano</title>
+<title>Posadas Reporta 2.0 — Etapa 1 (Supabase)</title>
 <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
 <script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #0f1117;
-    --bg-elevated: #1a1d26;
-    --bg-card: #222631;
-    --text: #f0f0f0;
-    --text-secondary: #a0a5b1;
-    --text-muted: #6b7280;
-    --border: #2a2e3a;
-    --accent: #ef4444;
-    --accent-hover: #dc2626;
-    --success: #22c55e;
-    --warning: #f59e0b;
-    --info: #3b82f6;
-    --radius: 12px;
-    --radius-sm: 8px;
+    --bg: #0f1117; --bg-elevated: #1a1d26; --bg-card: #222631;
+    --text: #f0f0f0; --text-secondary: #a0a5b1; --text-muted: #6b7280;
+    --border: #2a2e3a; --accent: #ef4444; --accent-hover: #dc2626;
+    --success: #22c55e; --warning: #f59e0b; --info: #3b82f6;
+    --radius: 12px; --radius-sm: 8px;
     --shadow: 0 4px 20px rgba(0,0,0,0.4);
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   [data-theme="light"] {
-    --bg: #ffffff;
-    --bg-elevated: #f8f9fa;
-    --bg-card: #ffffff;
-    --text: #111827;
-    --text-secondary: #4b5563;
-    --text-muted: #9ca3af;
-    --border: #e5e7eb;
-    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --bg: #ffffff; --bg-elevated: #f8f9fa; --bg-card: #ffffff;
+    --text: #111827; --text-secondary: #4b5563; --text-muted: #9ca3af;
+    --border: #e5e7eb; --shadow: 0 2px 12px rgba(0,0,0,0.08);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  header {
-    padding: 10px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--bg-elevated);
-    z-index: 100;
-  }
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .logo-icon {
-    width: 32px; height: 32px;
-    background: var(--accent);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    color: white; font-weight: 700; font-size: 14px;
-  }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  header { padding: 10px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-elevated); z-index: 100; gap: 10px; }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .logo-icon { width: 32px; height: 32px; background: var(--accent); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
   .logo-text h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
   .logo-text span { font-size: 11px; color: var(--text-muted); }
-  .header-actions { display: flex; align-items: center; gap: 10px; }
-  .btn-icon {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-secondary);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-  }
+  .header-actions { display: flex; align-items: center; gap: 8px; }
+  .btn-icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
   .btn-icon:hover { background: var(--border); color: var(--text); }
-  .btn-emergency {
-    padding: 8px 14px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.15s;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
-  }
-  .btn-emergency:hover { background: #b91c1c; }
-  .btn-report {
-    padding: 8px 16px;
-    background: var(--text);
-    color: var(--bg);
-    border: none;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s;
-  }
-  .btn-report:hover { opacity: 0.85; }
+  .btn-emergency { padding: 8px 14px; background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px; animation: pulse-red 2s infinite; flex-shrink: 0; }
+  .btn-emergency:hover { transform: scale(1.03); }
+  @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); } 50% { box-shadow: 0 0 0 8px rgba(220,38,38,0); } }
+  .btn-report { padding: 8px 16px; background: var(--accent); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.15s; flex-shrink: 0; }
+  .btn-report:hover { background: var(--accent-hover); }
+  .offline-banner { display: none; background: #f59e0b; color: #1a1a1a; text-align: center; padding: 6px; font-size: 12px; font-weight: 600; z-index: 101; }
+  .offline-banner.show { display: block; }
+  .sync-banner { display: none; background: var(--success); color: white; text-align: center; padding: 6px; font-size: 12px; font-weight: 600; z-index: 101; }
+  .sync-banner.show { display: block; }
   main { flex: 1; display: flex; position: relative; overflow: hidden; }
-  .sidebar {
-    width: 380px;
-    border-right: 1px solid var(--border);
-    background: var(--bg-elevated);
-    display: flex;
-    flex-direction: column;
-    z-index: 10;
-  }
-  .sidebar-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  .sidebar-header h2 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .sidebar { width: 400px; border-right: 1px solid var(--border); background: var(--bg-elevated); display: flex; flex-direction: column; z-index: 10; }
+  .sidebar-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .sidebar-header h2 { font-size: 15px; font-weight: 600; }
   .sidebar-header p { font-size: 12px; color: var(--text-muted); }
-  .filters {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .filter-chip {
-    padding: 5px 12px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.15s;
-    font-weight: 500;
-  }
+  .sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .sidebar-tab { flex: 1; padding: 10px; background: none; border: none; color: var(--text-muted); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .sidebar-tab:hover { color: var(--text-secondary); }
+  .sidebar-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .filters { padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-size: 12px; font-family: inherit; cursor: pointer; transition: all 0.15s; font-weight: 500; }
   .filter-chip:hover { border-color: var(--text-muted); }
-  .filter-chip.active {
-    background: var(--text);
-    color: var(--bg);
-    border-color: var(--text);
-  }
-  .report-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px;
-  }
-  .report-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
+  .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .report-list { flex: 1; overflow-y: auto; padding: 10px 14px; }
+  .report-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s ease; position: relative; }
   .report-card:hover { border-color: var(--text-muted); box-shadow: var(--shadow); }
   .report-card.active { border-color: var(--accent); }
-  .report-card .top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-  .report-card .cat {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 20px;
-    text-transform: lowercase;
-  }
+  .report-card.unverified { opacity: 0.7; }
+  .report-card.emergency { border-left: 4px solid #dc2626; }
+  .emergency-badge { position: absolute; top: -1px; right: -1px; background: #dc2626; color: white; font-size: 9px; font-weight: 700; padding: 3px 8px; border-radius: 0 12px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .verify-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+  .verify-badge.verified { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .verify-badge.pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .report-card .top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+  .report-card .cat { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; text-transform: lowercase; }
   .cat-bache { background: rgba(245,158,11,0.15); color: #f59e0b; }
   .cat-alumbrado { background: rgba(59,130,246,0.15); color: #3b82f6; }
   .cat-inseguridad { background: rgba(239,68,68,0.15); color: #ef4444; }
   .cat-basura { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .cat-emergencia { background: rgba(220,38,38,0.2); color: #dc2626; }
   .cat-otro { background: rgba(107,114,128,0.15); color: #9ca3af; }
-  .cat-emergencia { background: rgba(220,38,38,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
-  .status-badge {
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  .status-pendiente { background: rgba(245,158,11,0.15); color: #f59e0b; }
-  .status-proceso { background: rgba(59,130,246,0.15); color: #3b82f6; }
-  .status-resuelto { background: rgba(34,197,94,0.15); color: #22c55e; }
-  .report-card .photo {
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    background: var(--bg);
-  }
-  .report-card .desc {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.45;
-    margin-bottom: 6px;
-  }
-  .report-card .address {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .report-card .meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-  .report-card .actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
-  }
-  .action-btn {
-    flex: 1;
-    padding: 7px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    transition: all 0.15s;
-  }
+  .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .status-pending { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .status-in_progress { background: rgba(59,130,246,0.15); color: #3b82f6; }
+  .status-resolved { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .status-closed { background: rgba(107,114,128,0.15); color: #9ca3af; }
+  .report-card .photo { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: var(--bg); }
+  .report-card .address { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
+  .report-card .desc { font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 8px; }
+  .report-card .meta { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+  .report-card .actions { display: flex; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .action-btn { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--text-secondary); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; transition: all 0.15s; }
   .action-btn:hover { background: var(--border); color: var(--text); }
   .action-btn.voted { background: rgba(239,68,68,0.1); color: #ef4444; border-color: rgba(239,68,68,0.3); }
-  .empty-state {
-    text-align: center;
-    padding: 50px 20px;
-    color: var(--text-muted);
-  }
+  .action-btn.confirmed { background: rgba(34,197,94,0.1); color: #22c55e; border-color: rgba(34,197,94,0.3); }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
   .empty-state svg { width: 48px; height: 48px; margin-bottom: 14px; opacity: 0.3; }
   .empty-state p { font-size: 13px; line-height: 1.5; }
   #map { flex: 1; position: relative; }
-  .map-hint {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--bg-elevated);
-    color: var(--text);
-    padding: 10px 20px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    z-index: 5;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-    pointer-events: none;
-    opacity: 0.95;
-  }
-  .form-overlay {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    width: 360px;
-    max-height: 80vh;
-    overflow-y: auto;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    padding: 20px;
-    z-index: 50;
-    display: none;
-  }
+  .map-hint { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); background: var(--bg-elevated); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 12px; font-weight: 500; z-index: 5; box-shadow: var(--shadow); border: 1px solid var(--border); pointer-events: none; opacity: 0.95; }
+  .map-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+  .map-control-btn { width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: var(--shadow); transition: all 0.15s; }
+  .map-control-btn:hover { background: var(--border); color: var(--text); }
+  .map-control-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .form-overlay { position: absolute; bottom: 20px; left: 20px; width: 380px; max-height: 80vh; overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; z-index: 50; display: none; }
   .form-overlay.show { display: block; animation: slideUp 0.25s ease; }
   @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   .form-overlay h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
   .form-group { margin-bottom: 14px; }
   .form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
-  .form-group select, .form-group textarea, .form-group input[type="text"] {
-    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    font-family: inherit; font-size: 13px; outline: none; background: var(--bg); color: var(--text); transition: border-color 0.15s;
-  }
+  .form-group select, .form-group textarea, .form-group input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 13px; outline: none; background: var(--bg); color: var(--text); transition: border-color 0.15s; }
   .form-group select:focus, .form-group textarea:focus, .form-group input:focus { border-color: var(--accent); }
   .form-group textarea { resize: vertical; min-height: 70px; }
-  .photo-preview {
-    width: 100%; height: 120px; border: 2px dashed var(--border); border-radius: var(--radius-sm);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    color: var(--text-muted); font-size: 12px; cursor: pointer; transition: all 0.15s;
-    overflow: hidden; position: relative;
-  }
+  .photo-preview { width: 100%; height: 120px; border: 2px dashed var(--border); border-radius: var(--radius-sm); display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 12px; cursor: pointer; transition: all 0.15s; overflow: hidden; position: relative; }
   .photo-preview:hover { border-color: var(--accent); color: var(--text-secondary); }
   .photo-preview.has-image { border-style: solid; border-color: var(--border); }
   .photo-preview img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
@@ -326,11 +116,7 @@
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
   .btn-secondary:hover { background: var(--border); }
-  .detail-panel {
-    position: absolute; top: 16px; right: 16px; width: 340px; max-height: calc(100% - 32px);
-    overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; z-index: 50; display: none;
-  }
+  .detail-panel { position: absolute; top: 16px; right: 16px; width: 360px; max-height: calc(100% - 32px); overflow-y: auto; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; z-index: 50; display: none; }
   .detail-panel.show { display: block; animation: slideLeft 0.2s ease; }
   @keyframes slideLeft { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
   .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
@@ -338,53 +124,59 @@
   .detail-close { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
   .detail-close:hover { color: var(--text); }
   .detail-photo { width: 100%; height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; background: var(--bg); }
-  .detail-address { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 4px; }
+  .detail-address { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
   .detail-meta { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
   .detail-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px; }
   .status-selector { display: flex; gap: 6px; margin-bottom: 16px; }
-  .status-option {
-    flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg);
-    color: var(--text-secondary); font-family: inherit; font-size: 11px; font-weight: 600;
-    cursor: pointer; text-transform: uppercase; text-align: center; transition: all 0.15s;
-  }
+  .status-option { flex: 1; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text-secondary); font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; text-transform: uppercase; text-align: center; transition: all 0.15s; }
   .status-option:hover { border-color: var(--text-muted); }
   .status-option.selected { border-color: currentColor; background: rgba(255,255,255,0.05); }
-  .comments-section { border-top: 1px solid var(--border); padding-top: 14px; }
-  .comments-section h4 { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--text-secondary); }
-  .comment-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .comment-item:last-child { border-bottom: none; }
-  .comment-author { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
-  .comment-text { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
-  .comment-time { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
-  .comment-form { display: flex; gap: 8px; margin-top: 10px; }
-  .comment-form input {
-    flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-    font-family: inherit; font-size: 12px; background: var(--bg); color: var(--text); outline: none;
-  }
-  .comment-form input:focus { border-color: var(--accent); }
-  .comment-form button {
-    padding: 8px 14px; border: none; border-radius: var(--radius-sm); background: var(--text); color: var(--bg);
-    font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
-  }
-  .cluster-marker {
-    background: var(--accent); border-radius: 50%; color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 13px;
-    border: 3px solid rgba(255,255,255,0.3);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: pointer;
-  }
-  .emergency-toast {
-    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
-    background: var(--accent); color: white; padding: 12px 24px;
-    border-radius: var(--radius); font-size: 13px; font-weight: 600;
-    z-index: 60; box-shadow: var(--shadow); display: none; animation: slideDown 0.3s ease;
-  }
-  .emergency-toast.show { display: block; }
-  @keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  .comments-section { margin-top: 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .comments-section h4 { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+  .comment-item { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px; }
+  .comment-item .comment-text { color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+  .comment-item .comment-meta { color: var(--text-muted); font-size: 10px; }
+  .comment-input-row { display: flex; gap: 8px; margin-top: 10px; }
+  .comment-input-row input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-family: inherit; font-size: 12px; outline: none; }
+  .comment-input-row input:focus { border-color: var(--accent); }
+  .comment-input-row button { padding: 8px 14px; background: var(--accent); color: white; border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .verify-section { margin-top: 12px; padding: 10px; background: var(--bg); border-radius: 8px; border: 1px solid var(--border); }
+  .verify-section p { font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+  .verify-btn { width: 100%; padding: 8px; background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .verify-btn:hover { background: rgba(34,197,94,0.2); }
+  .verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .cluster-marker { background: var(--accent); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; border: 3px solid rgba(255,255,255,0.3); box-shadow: 0 2px 8px rgba(0,0,0,0.4); cursor: pointer; }
+  .ranking-panel { flex: 1; overflow-y: auto; padding: 16px; display: none; }
+  .ranking-panel.show { display: block; }
+  .ranking-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+  .ranking-pos { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+  .ranking-pos.gold { background: rgba(245,158,11,0.2); color: #f59e0b; }
+  .ranking-pos.silver { background: rgba(156,163,175,0.2); color: #9ca3af; }
+  .ranking-pos.bronze { background: rgba(180,83,9,0.2); color: #b45309; }
+  .ranking-info { flex: 1; }
+  .ranking-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+  .ranking-info p { font-size: 11px; color: var(--text-muted); }
+  .ranking-stats { text-align: right; }
+  .ranking-stats .num { font-size: 18px; font-weight: 700; color: var(--success); }
+  .ranking-stats .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+  .emergency-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .emergency-modal.show { display: flex; }
+  .emergency-box { background: var(--bg-card); border: 2px solid #dc2626; border-radius: var(--radius); padding: 24px; max-width: 400px; width: 100%; text-align: center; }
+  .emergency-box h2 { color: #dc2626; margin-bottom: 12px; font-size: 20px; }
+  .emergency-box p { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+  .emergency-box .emergency-actions { display: flex; gap: 10px; }
+  .emergency-box .emergency-actions button { flex: 1; padding: 12px; border-radius: 8px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: none; }
+  .btn-emergency-confirm { background: #dc2626; color: white; }
+  .btn-emergency-confirm:hover { background: #b91c1c; }
+  .btn-emergency-cancel { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
   @media (max-width: 900px) {
     .sidebar { position: absolute; bottom: 0; left: 0; right: 0; width: 100%; height: 45%; border-right: none; border-top: 1px solid var(--border); border-radius: 16px 16px 0 0; }
     .form-overlay, .detail-panel { left: 10px; right: 10px; width: auto; bottom: 10px; top: auto; max-height: 70vh; }
     .detail-panel { top: 10px; bottom: auto; }
+    header { padding: 10px 12px; }
+    .logo-text h1 { font-size: 14px; }
+    .btn-emergency { font-size: 10px; padding: 6px 10px; }
+    .btn-report { font-size: 12px; padding: 6px 12px; }
   }
 </style>
 <base target="_blank">
@@ -395,7 +187,7 @@
   <div class="logo">
     <div class="logo-icon">PR</div>
     <div class="logo-text">
-      <h1>Posadas Reporta</h1>
+      <h1>Posadas Reporta <span style="font-size:11px;color:var(--success);">● v2.0</span></h1>
       <span>reporte ciudadano · posadas, misiones</span>
     </div>
   </div>
@@ -403,9 +195,12 @@
     <button class="btn-icon" onclick="toggleTheme()" title="cambiar tema">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
     </button>
-    <button class="btn-emergency" onclick="reportEmergency()">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-      peligro inmediato
+    <button class="btn-icon" onclick="showRanking()" title="ranking de barrios">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+    </button>
+    <button class="btn-emergency" onclick="openEmergencyModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      peligro
     </button>
     <button class="btn-report" onclick="startReport()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
@@ -414,11 +209,22 @@
   </div>
 </header>
 
+<div class="offline-banner" id="offline-banner">
+  ⚠️ Sin conexión a internet. Los reportes se guardarán localmente y se sincronizarán cuando vuelvas online.
+</div>
+<div class="sync-banner" id="sync-banner">✅ Sincronizado correctamente con Supabase</div>
+
 <main>
   <aside class="sidebar">
     <div class="sidebar-header">
-      <h2>reportes recientes</h2>
-      <p id="report-count">cargando...</p>
+      <div>
+        <h2 id="sidebar-title">reportes recientes</h2>
+        <p id="report-count">cargando desde Supabase...</p>
+      </div>
+    </div>
+    <div class="sidebar-tabs" id="sidebar-tabs">
+      <button class="sidebar-tab active" data-tab="list" onclick="switchTab('list')">Lista</button>
+      <button class="sidebar-tab" data-tab="ranking" onclick="switchTab('ranking')">Ranking</button>
     </div>
     <div class="filters" id="filters">
       <button class="filter-chip active" data-filter="all">todos</button>
@@ -430,17 +236,20 @@
       <button class="filter-chip" data-filter="otro">otros</button>
     </div>
     <div class="report-list" id="report-list"></div>
+    <div class="ranking-panel" id="ranking-panel"></div>
   </aside>
 
   <div id="map">
-    <div class="map-hint">hacé clic en el mapa para reportar un problema</div>
-    <div class="emergency-toast" id="emergency-toast">reporte de emergencia enviado</div>
+    <div class="map-hint" id="map-hint">hacé clic en el mapa para reportar un problema</div>
+    <div class="map-controls">
+      <button class="map-control-btn" id="heatmap-btn" onclick="toggleHeatmap()" title="ver heatmap">🔥</button>
+      <button class="map-control-btn" onclick="locateUser()" title="mi ubicación">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+      </button>
+    </div>
 
     <div class="form-overlay" id="form-overlay">
-      <h3>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-        nuevo reporte
-      </h3>
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> nuevo reporte</h3>
       <div class="form-group">
         <label>categoría</label>
         <select id="cat-select">
@@ -473,7 +282,10 @@
 
     <div class="detail-panel" id="detail-panel">
       <div class="detail-header">
-        <span class="cat" id="detail-cat"></span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="cat" id="detail-cat"></span>
+          <span id="detail-verify"></span>
+        </div>
         <button class="detail-close" onclick="closeDetail()">×</button>
       </div>
       <img class="detail-photo" id="detail-photo" style="display:none">
@@ -482,7 +294,7 @@
       <div class="detail-desc" id="detail-desc"></div>
       <label style="font-size:11px;color:var(--text-muted);margin-bottom:6px;display:block;font-weight:500;">estado del reporte</label>
       <div class="status-selector" id="status-selector"></div>
-      <div class="form-actions" style="margin-bottom:16px;">
+      <div class="form-actions">
         <button class="btn btn-secondary" onclick="shareWhatsApp()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
           compartir
@@ -492,21 +304,45 @@
           me pasa (<span id="vote-count">0</span>)
         </button>
       </div>
+      <div class="verify-section" id="verify-section">
+        <p id="verify-text"></p>
+        <button class="verify-btn" id="verify-btn" onclick="confirmReport()">✅ Confirmar que esto es real</button>
+      </div>
       <div class="comments-section">
-        <h4>comentarios de vecinos</h4>
+        <h4>💬 Comentarios de vecinos</h4>
         <div id="comments-list"></div>
-        <div class="comment-form">
-          <input type="text" id="comment-input" placeholder="agregá un comentario...">
-          <button onclick="addComment()">enviar</button>
+        <div class="comment-input-row">
+          <input type="text" id="comment-input" placeholder="Agregá información útil..." onkeydown="if(event.key==='Enter')addComment()">
+          <button onclick="addComment()">Enviar</button>
         </div>
       </div>
     </div>
   </div>
 </main>
 
+<div class="emergency-modal" id="emergency-modal">
+  <div class="emergency-box">
+    <h2>🚨 Reporte de emergencia</h2>
+    <p>Se creará un reporte de <strong>PELIGRO INMEDIATO</strong> en tu ubicación actual.<br><br>
+    Usá esto solo para situaciones graves: poste caído con cables, robo en progreso, inundación, etc.</p>
+    <div class="emergency-actions">
+      <button class="btn-emergency-cancel" onclick="closeEmergencyModal()">Cancelar</button>
+      <button class="btn-emergency-confirm" onclick="submitEmergency()">Reportar emergencia</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ============================================================
+// CONFIGURACIÓN - REEMPLAZAR CON TUS CREDENCIALES DE SUPABASE
+// ============================================================
+const SUPABASE_URL = 'https://TU-PROJECT.supabase.co';        // ← 
+https://bmcxzmkfwccjrrfpcfrs.supabase.co
+const SUPABASE_ANON_KEY = 'TU-ANON-KEY';                      // ← eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtY3h6bWtmd2NjanJyZnBjZnJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2NzQ4ODMsImV4cCI6MjEwMTI1MDg4M30.4Rob9YlAR6ZWWcTOG1IN7IxzX8zVI1YMxZ1q_qB7O38
+
 const POSADAS_CENTER = [-55.9005, -27.3678];
-const STORAGE_KEY = 'posadas_reporta_v4';
+const QUEUE_KEY = 'posadas_reporta_queue';
+const META_KEY = 'posadas_reporta_meta_v1';
 
 let reports = [];
 let tempCoords = null;
@@ -515,69 +351,181 @@ let currentFilter = 'all';
 let selectedReportId = null;
 let clusterIndex = null;
 let clusterMarkers = [];
+let heatmapEnabled = false;
+let heatmapLayer = null;
+let currentTab = 'list';
+
+// Cliente Supabase
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function getUserId() {
   return localStorage.getItem('anon_id') || (localStorage.setItem('anon_id', 'anon_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('anon_id'));
 }
 
-const map = new maplibregl.Map({
-  container: 'map',
-  style: {
-    version: 8,
-    sources: {
-      osm: {
-        type: 'raster',
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        attribution: '&copy; OpenStreetMap contributors'
-      }
-    },
-    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-  },
-  center: POSADAS_CENTER,
-  zoom: 13
-});
+// ========== META STORAGE (votos, comentarios, confirmaciones locales) ==========
+function getMeta() {
+  const raw = localStorage.getItem(META_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+function saveMeta(m) {
+  localStorage.setItem(META_KEY, JSON.stringify(m));
+}
+function getReportMeta(id) {
+  const m = getMeta();
+  if (!m[id]) m[id] = { votes: 0, votedBy: [], comments: [], confirmations: [], verified: false };
+  return m[id];
+}
+function setReportMeta(id, meta) {
+  const m = getMeta();
+  m[id] = meta;
+  saveMeta(m);
+}
 
-map.addControl(new maplibregl.NavigationControl(), 'top-right');
-map.addControl(new maplibregl.GeolocateControl({
-  positionOptions: { enableHighAccuracy: true },
-  trackUserLocation: true
-}), 'top-right');
+// ========== OFFLINE DETECTION ==========
+function updateOnlineStatus() {
+  const offBanner = document.getElementById('offline-banner');
+  if (navigator.onLine) {
+    offBanner.classList.remove('show');
+    syncQueue();
+  } else {
+    offBanner.classList.add('show');
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
 
-// === GEOCODING ===
+function getQueue() {
+  const raw = localStorage.getItem(QUEUE_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+function saveQueue(q) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+}
+function addToQueue(report) {
+  const q = getQueue();
+  q.push(report);
+  saveQueue(q);
+  renderAll();
+  alert('Sin conexión. El reporte se guardó localmente y se sincronizará cuando vuelvas online.');
+}
+
+async function syncQueue() {
+  const q = getQueue();
+  if (q.length === 0) return;
+  let syncedCount = 0;
+  for (const r of q) {
+    const payload = {
+      category: r.category,
+      description: r.description,
+      latitude: r.lat || r.latitude,
+      longitude: r.lng || r.longitude,
+      address: r.address,
+      neighborhood: r.neighborhood,
+      photo: r.photo,
+      status: r.status || 'pending',
+      is_emergency: r.isEmergency || false
+    };
+    const { data, error } = await supabaseClient.from('reports').insert(payload).select().single();
+    if (!error && data) {
+      syncedCount++;
+    }
+  }
+  saveQueue([]);
+  if (syncedCount > 0) {
+    const banner = document.getElementById('sync-banner');
+    banner.textContent = '✅ ' + syncedCount + ' reporte(s) sincronizado(s) con Supabase';
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), 4000);
+    await loadReports();
+    renderAll();
+  }
+}
+
+// ========== GEOCODING ==========
 async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es`, {
       headers: { 'User-Agent': 'PosadasReporta/1.0' }
     });
     const data = await res.json();
-    if (data && data.display_name) {
-      const parts = data.display_name.split(',');
-      return parts.slice(0, 3).join(', ');
-    }
-  } catch(e) {}
-  return null;
+    const address = data.address || {};
+    const street = address.road || address.street || address.pedestrian || 'Calle desconocida';
+    const suburb = address.suburb || address.neighbourhood || address.district || 'Barrio desconocido';
+    const house = address.house_number ? ' ' + address.house_number : '';
+    return { address: street + house, neighborhood: suburb, full: data.display_name || (street + ', ' + suburb) };
+  } catch (e) {
+    return { address: 'Ubicación sin nombre', neighborhood: 'Barrio desconocido', full: 'Ubicación sin nombre' };
+  }
 }
 
+// ========== MAP ==========
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution: '&copy; OpenStreetMap contributors' }
+    },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+  },
+  center: POSADAS_CENTER,
+  zoom: 13
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+map.addControl(new maplibregl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, trackUserLocation: true }), 'top-right');
+
+function toggleHeatmap() {
+  heatmapEnabled = !heatmapEnabled;
+  document.getElementById('heatmap-btn').classList.toggle('active', heatmapEnabled);
+  if (heatmapEnabled) addHeatmapLayer(); else removeHeatmapLayer();
+}
+function addHeatmapLayer() {
+  if (heatmapLayer) return;
+  const geojson = {
+    type: 'FeatureCollection',
+    features: reports.filter(r => !r.isEmergency).map(r => ({ type: 'Feature', properties: { weight: (r.votes || 0) + 1 }, geometry: { type: 'Point', coordinates: [r.lng, r.lat] } }))
+  };
+  map.addSource('heatmap-source', { type: 'geojson', data: geojson });
+  map.addLayer({
+    id: 'heatmap-layer', type: 'heatmap', source: 'heatmap-source',
+    paint: {
+      'heatmap-weight': ['get', 'weight'], 'heatmap-intensity': 1.5,
+      'heatmap-color': ['interpolate', ['linear'], ['heatmap-density'], 0, 'rgba(0,0,0,0)', 0.2, 'rgba(255,200,0,0.3)', 0.5, 'rgba(255,100,0,0.5)', 1, 'rgba(255,0,0,0.7)'],
+      'heatmap-radius': 30, 'heatmap-opacity': 0.7
+    }
+  });
+  heatmapLayer = 'heatmap-layer';
+}
+function removeHeatmapLayer() {
+  if (!heatmapLayer) return;
+  if (map.getLayer('heatmap-layer')) map.removeLayer('heatmap-layer');
+  if (map.getSource('heatmap-source')) map.removeSource('heatmap-source');
+  heatmapLayer = null;
+}
+function updateHeatmap() {
+  if (!heatmapEnabled) return;
+  removeHeatmapLayer(); addHeatmapLayer();
+}
+function locateUser() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 16 });
+  }, () => alert('No se pudo obtener tu ubicación'));
+}
+
+// ========== CLUSTERS ==========
 function updateClusters() {
   const filtered = currentFilter === 'all' ? reports : reports.filter(r => r.category === currentFilter);
-  const points = filtered.map(r => ({
-    type: 'Feature',
-    properties: { id: r.id, cluster: false },
-    geometry: { type: 'Point', coordinates: [r.lng, r.lat] }
-  }));
+  const points = filtered.map(r => ({ type: 'Feature', properties: { id: r.id, cluster: false }, geometry: { type: 'Point', coordinates: [r.lng, r.lat] } }));
   clusterIndex = new Supercluster({ radius: 60, maxZoom: 16, minPoints: 2 });
   clusterIndex.load(points);
   renderClusters();
 }
-
 function renderClusters() {
   clusterMarkers.forEach(m => m.remove());
   clusterMarkers = [];
   const bounds = map.getBounds();
   const zoom = Math.floor(map.getZoom());
   const clusters = clusterIndex.getClusters([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()], zoom);
-
   clusters.forEach(cluster => {
     const [lng, lat] = cluster.geometry.coordinates;
     const el = document.createElement('div');
@@ -585,8 +533,7 @@ function renderClusters() {
       const count = cluster.properties.point_count;
       const size = Math.min(20 + count * 3, 50);
       el.className = 'cluster-marker';
-      el.style.width = size + 'px';
-      el.style.height = size + 'px';
+      el.style.width = size + 'px'; el.style.height = size + 'px';
       el.textContent = count;
       el.addEventListener('click', () => {
         const expansionZoom = clusterIndex.getClusterExpansionZoom(cluster.properties.cluster_id);
@@ -595,10 +542,12 @@ function renderClusters() {
     } else {
       const r = reports.find(x => x.id === cluster.properties.id);
       if (!r) return;
-      const colors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', otro: '#9ca3af', emergencia: '#dc2626' };
-      el.style.cssText = 'width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;background:'+(colors[r.category]||colors.otro);
-      if (r.category === 'emergencia') {
-        el.style.animation = 'pulse 1.5s infinite';
+      const colors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', emergencia: '#dc2626', otro: '#9ca3af' };
+      const color = colors[r.category] || colors.otro;
+      if (r.isEmergency) {
+        el.style.cssText = 'width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);box-shadow:0 0 0 0 rgba(220,38,38,0.7);cursor:pointer;background:'+color+';animation: pulse-red 1.5s infinite;';
+      } else {
+        el.style.cssText = 'width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,255,255,0.3);box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;background:'+color;
       }
       el.addEventListener('click', () => { selectReport(r.id); });
     }
@@ -606,80 +555,72 @@ function renderClusters() {
     clusterMarkers.push(marker);
   });
 }
-
 map.on('moveend', renderClusters);
 map.on('zoomend', renderClusters);
 
-function loadReports() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (raw) { try { reports = JSON.parse(raw); } catch(e) {} }
-}
-function saveReports() { localStorage.setItem(STORAGE_KEY, JSON.stringify(reports)); }
+// ========== LOAD REPORTS FROM SUPABASE ==========
+async function loadReports() {
+  document.getElementById('report-count').textContent = 'cargando desde Supabase...';
+  const { data, error } = await supabaseClient
+    .from('reports')
+    .select('*')
+    .order('created_at', { ascending: false });
 
+  if (error) {
+    console.error('Error cargando reportes:', error);
+    document.getElementById('report-count').textContent = 'error de conexión con Supabase';
+    return;
+  }
+
+  // Normalizar datos de Supabase a formato interno + mergear meta local
+  reports = data.map(r => {
+    const meta = getReportMeta(r.id);
+    return {
+      id: r.id,
+      public_id: r.public_id,
+      lat: r.latitude,
+      lng: r.longitude,
+      category: r.category,
+      description: r.description,
+      photo: r.photo,
+      status: r.status,
+      address: r.address,
+      neighborhood: r.neighborhood,
+      createdAt: r.created_at,
+      isEmergency: r.is_emergency,
+      // capa local (hasta migrar a tablas propias)
+      votes: meta.votes || 0,
+      votedBy: meta.votedBy || [],
+      comments: meta.comments || [],
+      confirmations: meta.confirmations || [],
+      verified: meta.verified || false
+    };
+  });
+}
+
+// ========== THEME ==========
 function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   document.documentElement.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
 }
 
-// === EMERGENCY ===
-function reportEmergency() {
-  if (!navigator.geolocation) {
-    alert('tu navegador no soporta geolocalización. hacé clic en el mapa para reportar.');
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(async (pos) => {
-    const lat = pos.coords.latitude;
-    const lng = pos.coords.longitude;
-    const address = await reverseGeocode(lat, lng);
-
-    const report = {
-      id: Date.now(),
-      lat: lat,
-      lng: lng,
-      category: 'emergencia',
-      description: 'reporte de emergencia enviado desde la ubicación actual',
-      photo: null,
-      status: 'pendiente',
-      votes: 0,
-      votedBy: [],
-      address: address,
-      comments: [],
-      createdAt: new Date().toISOString()
-    };
-
-    reports.unshift(report);
-    saveReports();
-    renderAll();
-
-    const toast = document.getElementById('emergency-toast');
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
-
-    map.flyTo({ center: [lng, lat], zoom: 16, duration: 800 });
-    selectReport(report.id);
-  }, () => {
-    alert('no se pudo obtener tu ubicación. asegurate de permitir el acceso a la ubicación.');
-  });
-}
-
+// ========== REPORT NORMAL ==========
 function startReport() {
-  document.querySelector('.map-hint').textContent = 'hacé clic en el mapa para ubicar el problema';
+  document.getElementById('map-hint').textContent = 'hacé clic en el mapa para ubicar el problema';
   map.once('click', (e) => {
     tempCoords = [e.lngLat.lng, e.lngLat.lat];
     document.getElementById('form-overlay').classList.add('show');
     document.getElementById('desc-input').focus();
-    document.querySelector('.map-hint').textContent = 'hacé clic en el mapa para reportar un problema';
+    document.getElementById('map-hint').textContent = 'hacé clic en el mapa para reportar un problema';
   });
 }
-
 map.on('click', (e) => {
-  if (!document.getElementById('form-overlay').classList.contains('show') && !selectedReportId) {
+  if (!document.getElementById('form-overlay').classList.contains('show') && !selectedReportId && !document.getElementById('emergency-modal').classList.contains('show')) {
     tempCoords = [e.lngLat.lng, e.lngLat.lat];
     document.getElementById('form-overlay').classList.add('show');
     document.getElementById('desc-input').focus();
   }
 });
-
 function handlePhoto(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -692,7 +633,6 @@ function handlePhoto(e) {
   };
   reader.readAsDataURL(file);
 }
-
 function cancelReport() {
   document.getElementById('form-overlay').classList.remove('show');
   tempCoords = null; tempPhoto = null;
@@ -708,30 +648,105 @@ async function submitReport() {
   const desc = document.getElementById('desc-input').value.trim() || 'sin descripción';
   if (!tempCoords) return;
 
-  const address = await reverseGeocode(tempCoords[1], tempCoords[0]);
+  document.getElementById('map-hint').textContent = 'Geocodificando dirección...';
+  const geo = await reverseGeocode(tempCoords[1], tempCoords[0]);
+  document.getElementById('map-hint').textContent = 'hacé clic en el mapa para reportar un problema';
 
-  const report = {
-    id: Date.now(),
-    lat: tempCoords[1],
-    lng: tempCoords[0],
+  const payload = {
     category: cat,
     description: desc,
+    latitude: tempCoords[1],
+    longitude: tempCoords[0],
+    address: geo.address,
+    neighborhood: geo.neighborhood,
     photo: tempPhoto,
-    status: 'pendiente',
-    votes: 0,
-    votedBy: [],
-    address: address,
-    comments: [],
-    createdAt: new Date().toISOString()
+    status: 'pending',
+    is_emergency: false
   };
 
+  if (!navigator.onLine) {
+    addToQueue({ ...payload, id: 'local_' + Date.now(), lat: tempCoords[1], lng: tempCoords[0], synced: false });
+    cancelReport();
+    return;
+  }
+
+  const { data, error } = await supabaseClient.from('reports').insert(payload).select().single();
+  if (error) {
+    alert('Error guardando el reporte: ' + error.message);
+    return;
+  }
+
+  const report = {
+    id: data.id,
+    public_id: data.public_id,
+    lat: data.latitude,
+    lng: data.longitude,
+    category: data.category,
+    description: data.description,
+    photo: data.photo,
+    status: data.status,
+    address: data.address,
+    neighborhood: data.neighborhood,
+    createdAt: data.created_at,
+    isEmergency: data.is_emergency,
+    votes: 0, votedBy: [], comments: [], confirmations: [], verified: false
+  };
   reports.unshift(report);
-  saveReports();
   renderAll();
   cancelReport();
   selectReport(report.id);
 }
 
+// ========== EMERGENCY ==========
+function openEmergencyModal() { document.getElementById('emergency-modal').classList.add('show'); }
+function closeEmergencyModal() { document.getElementById('emergency-modal').classList.remove('show'); }
+
+async function submitEmergency() {
+  closeEmergencyModal();
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    document.getElementById('map-hint').textContent = 'Geocodificando...';
+    const geo = await reverseGeocode(lat, lng);
+    document.getElementById('map-hint').textContent = 'hacé clic en el mapa para reportar un problema';
+
+    const payload = {
+      category: 'emergencia',
+      description: '⚠️ Reporte de emergencia — situación de peligro inmediato',
+      latitude: lat,
+      longitude: lng,
+      address: geo.address,
+      neighborhood: geo.neighborhood,
+      status: 'pending',
+      is_emergency: true
+    };
+
+    if (!navigator.onLine) {
+      addToQueue({ ...payload, id: 'local_' + Date.now(), lat, lng, synced: false });
+      return;
+    }
+
+    const { data, error } = await supabaseClient.from('reports').insert(payload).select().single();
+    if (error) {
+      alert('Error: ' + error.message);
+      return;
+    }
+
+    const report = {
+      id: data.id, public_id: data.public_id, lat: data.latitude, lng: data.longitude,
+      category: data.category, description: data.description, photo: data.photo,
+      status: data.status, address: data.address, neighborhood: data.neighborhood,
+      createdAt: data.created_at, isEmergency: data.is_emergency,
+      votes: 0, votedBy: [], comments: [], confirmations: [], verified: true
+    };
+    reports.unshift(report);
+    renderAll();
+    selectReport(report.id);
+    map.flyTo({ center: [lng, lat], zoom: 16 });
+  }, () => alert('No se pudo obtener tu ubicación. Activá el GPS y permití el acceso.'));
+}
+
+// ========== FILTERS & TABS ==========
 document.getElementById('filters').addEventListener('click', (e) => {
   if (!e.target.classList.contains('filter-chip')) return;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
@@ -739,52 +754,74 @@ document.getElementById('filters').addEventListener('click', (e) => {
   currentFilter = e.target.dataset.filter;
   renderAll();
 });
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.sidebar-tab[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('report-list').style.display = tab === 'list' ? 'block' : 'none';
+  document.getElementById('ranking-panel').style.display = tab === 'ranking' ? 'block' : 'none';
+  document.getElementById('filters').style.display = tab === 'list' ? 'flex' : 'none';
+  document.getElementById('sidebar-title').textContent = tab === 'list' ? 'reportes recientes' : 'ranking de barrios';
+  if (tab === 'ranking') renderRanking(); else renderList();
+}
+function showRanking() { switchTab('ranking'); }
 
+// ========== RENDER ALL ==========
 function renderAll() {
   updateClusters();
-  renderList();
-  const count = (currentFilter === 'all' ? reports : reports.filter(r => r.category === currentFilter)).length;
+  updateHeatmap();
+  if (currentTab === 'list') renderList(); else renderRanking();
+  const queue = getQueue();
+  const allReports = [...queue.map(q => ({...q, id: q.id || 'local_' + Math.random()})), ...reports];
+  const filtered = currentFilter === 'all' ? allReports : allReports.filter(r => r.category === currentFilter);
+  const count = filtered.length;
   document.getElementById('report-count').textContent = count + ' reporte' + (count !== 1 ? 's' : '') + (currentFilter !== 'all' ? ' · ' + currentFilter : '');
 }
 
 function renderList() {
   const container = document.getElementById('report-list');
-  const filtered = currentFilter === 'all' ? [...reports] : reports.filter(r => r.category === currentFilter);
+  const queue = getQueue();
+  const allReports = [...queue, ...reports];
+  const filtered = currentFilter === 'all' ? allReports : allReports.filter(r => r.category === currentFilter);
+
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin-bottom:12px;opacity:0.3"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 7m0 13V7"/></svg><p>no hay reportes en esta categoría.<br>hacé clic en el mapa para crear uno.</p></div>';
     return;
   }
+
   const uid = getUserId();
   container.innerHTML = filtered.map(r => {
     const statusClass = 'status-' + r.status;
-    const statusText = { pendiente: 'pendiente', proceso: 'en proceso', resuelto: 'resuelto' }[r.status] || r.status;
-    const hasVoted = r.votedBy.includes(uid);
-    const addr = r.address ? escapeHtml(r.address) : r.lat.toFixed(4) + ', ' + r.lng.toFixed(4);
-    const isEmergency = r.category === 'emergencia';
-    return `<div class="report-card ${selectedReportId === r.id ? 'active' : ''}" data-id="${r.id}" onclick="selectReport(${r.id})">
+    const statusText = { pending: 'pendiente', in_progress: 'en proceso', resolved: 'resuelto', closed: 'cerrado' }[r.status] || r.status;
+    const hasVoted = r.votedBy && r.votedBy.includes(uid);
+    const isUnverified = !r.verified && !r.isEmergency;
+    const isEmergency = r.isEmergency;
+    const isQueued = typeof r.id === 'string' && r.id.startsWith('local_');
+    const confirmCount = r.confirmations ? r.confirmations.length : 0;
+    const hasConfirmed = r.confirmations && r.confirmations.includes(uid);
+
+    return `<div class="report-card ${selectedReportId === r.id ? 'active' : ''} ${isUnverified ? 'unverified' : ''} ${isEmergency ? 'emergency' : ''}" data-id="${r.id}" onclick="selectReport('${r.id}')">
+      ${isEmergency ? '<div class="emergency-badge">emergencia</div>' : ''}
       <div class="top">
-        <span class="cat cat-${r.category}">${isEmergency ? '⚠️ emergencia' : r.category}</span>
-        <span class="status-badge ${statusClass}">${statusText}</span>
+        <span class="cat cat-${r.category}">${r.category}</span>
+        <span class="status-badge ${statusClass}">${statusText}${isQueued ? ' · sin sync' : ''}</span>
       </div>
       ${r.photo ? '<img class="photo" src="'+r.photo+'">' : ''}
+      <div class="address">📍 ${escapeHtml(r.address || 'Sin dirección')}</div>
       <div class="desc">${escapeHtml(r.description)}</div>
-      <div class="address">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        ${addr}
-      </div>
       <div class="meta">
-        <span>${formatDate(r.createdAt)}</span>
-        <span>${r.votes} voto${r.votes !== 1 ? 's' : ''}${r.comments.length ? ' · ' + r.comments.length + ' comentario' + (r.comments.length !== 1 ? 's' : '') : ''}</span>
+        <span>${formatDate(r.createdAt)} · ${r.neighborhood || 'Barrio desconocido'}${r.public_id ? ' · ' + r.public_id : ''}</span>
+        <span>${r.votes || 0} voto${(r.votes || 0) !== 1 ? 's' : ''}</span>
       </div>
       <div class="actions">
-        <button class="action-btn ${hasVoted ? 'voted' : ''}" onclick="event.stopPropagation(); voteReportId(${r.id})">
+        <button class="action-btn ${hasVoted ? 'voted' : ''}" onclick="event.stopPropagation(); voteReportId('${r.id}')">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3zM7 22H4a2 2 0 01-2-2v-7a2 2 0 012-2h3"/></svg>
-          me pasa (${r.votes})
+          me pasa (${r.votes || 0})
         </button>
-        <button class="action-btn" onclick="event.stopPropagation(); shareReportId(${r.id})">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-          compartir
-        </button>
+        ${!r.isEmergency ? `<button class="action-btn ${hasConfirmed ? 'confirmed' : ''}" onclick="event.stopPropagation(); confirmReportId('${r.id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+          ${hasConfirmed ? 'confirmado' : 'confirmar'} (${confirmCount}/2)
+        </button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -792,36 +829,38 @@ function renderList() {
 
 function selectReport(id) {
   selectedReportId = id;
-  const r = reports.find(x => x.id === id);
+  const r = reports.find(x => x.id === id) || getQueue().find(x => x.id === id);
   if (!r) return;
   document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
   const card = document.querySelector(`.report-card[data-id="${id}"]`);
   if (card) card.classList.add('active');
 
-  const catColors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', otro: '#9ca3af', emergencia: '#dc2626' };
+  const catColors = { bache: '#f59e0b', alumbrado: '#3b82f6', inseguridad: '#ef4444', basura: '#22c55e', emergencia: '#dc2626', otro: '#9ca3af' };
   const catEl = document.getElementById('detail-cat');
-  catEl.textContent = r.category === 'emergencia' ? '⚠️ emergencia' : r.category;
+  catEl.textContent = r.category;
   catEl.className = 'cat cat-' + r.category;
   catEl.style.cssText = 'display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:lowercase;background:'+catColors[r.category]+'15;color:'+(catColors[r.category]||'#9ca3af');
+
+  const verifyEl = document.getElementById('detail-verify');
+  if (r.isEmergency) {
+    verifyEl.innerHTML = '';
+  } else if (r.verified) {
+    verifyEl.innerHTML = '<span class="verify-badge verified">✓ Verificado por vecinos</span>';
+  } else {
+    verifyEl.innerHTML = '<span class="verify-badge pending">⏳ Pendiente de verificación (' + (r.confirmations ? r.confirmations.length : 0) + '/2)</span>';
+  }
 
   const photoEl = document.getElementById('detail-photo');
   if (r.photo) { photoEl.src = r.photo; photoEl.style.display = 'block'; }
   else { photoEl.style.display = 'none'; }
 
-  const addrEl = document.getElementById('detail-address');
-  if (r.address) {
-    addrEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> ' + escapeHtml(r.address);
-    addrEl.style.display = 'flex';
-  } else {
-    addrEl.style.display = 'none';
-  }
-
+  document.getElementById('detail-address').textContent = '📍 ' + (r.address || 'Sin dirección') + ' — ' + (r.neighborhood || 'Barrio desconocido') + (r.public_id ? ' · ' + r.public_id : '');
   document.getElementById('detail-meta').textContent = formatDate(r.createdAt);
   document.getElementById('detail-desc').textContent = r.description;
-  document.getElementById('vote-count').textContent = r.votes;
+  document.getElementById('vote-count').textContent = r.votes || 0;
 
   const uid = getUserId();
-  const hasVoted = r.votedBy.includes(uid);
+  const hasVoted = r.votedBy && r.votedBy.includes(uid);
   const voteBtn = document.getElementById('vote-btn');
   voteBtn.className = 'btn btn-primary' + (hasVoted ? ' voted' : '');
   voteBtn.style.background = hasVoted ? 'rgba(239,68,68,0.1)' : '';
@@ -830,54 +869,42 @@ function selectReport(id) {
 
   const statusSel = document.getElementById('status-selector');
   const statuses = [
-    { key: 'pendiente', label: 'pendiente', color: '#f59e0b' },
-    { key: 'proceso', label: 'en proceso', color: '#3b82f6' },
-    { key: 'resuelto', label: 'resuelto', color: '#22c55e' }
+    { key: 'pending', label: 'pendiente', color: '#f59e0b' },
+    { key: 'in_progress', label: 'en proceso', color: '#3b82f6' },
+    { key: 'resolved', label: 'resuelto', color: '#22c55e' }
   ];
-  statusSel.innerHTML = statuses.map(s => 
+  statusSel.innerHTML = statuses.map(s =>
     `<button class="status-option ${r.status === s.key ? 'selected' : ''}" style="color:${s.color};border-color:${r.status === s.key ? s.color : ''}" onclick="setStatus('${s.key}')">${s.label}</button>`
   ).join('');
 
-  renderComments(r);
+  const verifySection = document.getElementById('verify-section');
+  const verifyText = document.getElementById('verify-text');
+  const verifyBtn = document.getElementById('verify-btn');
+  if (r.isEmergency || r.verified) {
+    verifySection.style.display = 'none';
+  } else {
+    verifySection.style.display = 'block';
+    const need = 2 - (r.confirmations ? r.confirmations.length : 0);
+    verifyText.textContent = 'Este reporte necesita ' + need + ' confirmación' + (need !== 1 ? 'es' : '') + ' más de vecinos distintos para ser público. Ayudá a combatir los reportes falsos.';
+    const alreadyConfirmed = r.confirmations && r.confirmations.includes(uid);
+    verifyBtn.disabled = alreadyConfirmed;
+    verifyBtn.textContent = alreadyConfirmed ? '✓ Ya confirmaste este reporte' : '✅ Confirmar que esto es real';
+  }
 
+  const commentsList = document.getElementById('comments-list');
+  if (r.comments && r.comments.length > 0) {
+    commentsList.innerHTML = r.comments.map(c => `
+      <div class="comment-item">
+        <div class="comment-text">${escapeHtml(c.text)}</div>
+        <div class="comment-meta">${formatDate(c.createdAt)}</div>
+      </div>
+    `).join('');
+  } else {
+    commentsList.innerHTML = '<p style="color:var(--text-muted);font-size:12px;">Todavía no hay comentarios. Sé el primero en agregar información útil.</p>';
+  }
+  document.getElementById('comment-input').value = '';
   document.getElementById('detail-panel').classList.add('show');
   map.flyTo({ center: [r.lng, r.lat], zoom: 16, duration: 600 });
-}
-
-function renderComments(r) {
-  const list = document.getElementById('comments-list');
-  if (!r.comments || r.comments.length === 0) {
-    list.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">todavía no hay comentarios. sé el primero.</div>';
-    return;
-  }
-  list.innerHTML = r.comments.map(c => `
-    <div class="comment-item">
-      <div class="comment-author">${escapeHtml(c.author)}</div>
-      <div class="comment-text">${escapeHtml(c.text)}</div>
-      <div class="comment-time">${formatDate(c.createdAt)}</div>
-    </div>
-  `).join('');
-}
-
-function addComment() {
-  const input = document.getElementById('comment-input');
-  const text = input.value.trim();
-  if (!text || !selectedReportId) return;
-
-  const r = reports.find(x => x.id === selectedReportId);
-  if (!r) return;
-
-  if (!r.comments) r.comments = [];
-  r.comments.push({
-    author: 'vecino',
-    text: text,
-    createdAt: new Date().toISOString()
-  });
-
-  saveReports();
-  renderAll();
-  renderComments(r);
-  input.value = '';
 }
 
 function closeDetail() {
@@ -886,42 +913,72 @@ function closeDetail() {
   document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
 }
 
-function setStatus(status) {
+async function setStatus(status) {
   const r = reports.find(x => x.id === selectedReportId);
   if (!r) return;
   r.status = status;
-  saveReports();
   renderAll();
   selectReport(selectedReportId);
+  const { error } = await supabaseClient.from('reports').update({ status: status, updated_at: new Date().toISOString() }).eq('id', selectedReportId);
+  if (error) alert('Error actualizando estado: ' + error.message);
 }
 
-function voteReport() {
-  if (!selectedReportId) return;
-  voteReportId(selectedReportId);
-}
+function voteReport() { if (!selectedReportId) return; voteReportId(selectedReportId); }
 
 function voteReportId(id) {
-  const r = reports.find(x => x.id === id);
+  const r = reports.find(x => x.id === id) || getQueue().find(x => x.id === id);
   if (!r) return;
   const uid = getUserId();
+  if (!r.votedBy) r.votedBy = [];
   const idx = r.votedBy.indexOf(uid);
-  if (idx === -1) { r.votedBy.push(uid); r.votes++; }
-  else { r.votedBy.splice(idx, 1); r.votes--; }
-  saveReports();
+  if (idx === -1) { r.votedBy.push(uid); r.votes = (r.votes || 0) + 1; }
+  else { r.votedBy.splice(idx, 1); r.votes = (r.votes || 0) - 1; }
+  const meta = getReportMeta(id);
+  meta.votes = r.votes; meta.votedBy = r.votedBy;
+  setReportMeta(id, meta);
   renderAll();
   if (selectedReportId === id) selectReport(id);
 }
 
-function shareReportId(id) {
+function confirmReport() { if (!selectedReportId) return; confirmReportId(selectedReportId); }
+
+function confirmReportId(id) {
   const r = reports.find(x => x.id === id);
-  if (!r) return;
-  const text = encodeURIComponent('Reporte en Posadas: ' + r.description + ' (' + r.category + ')' + (r.address ? ' en ' + r.address : '') + ' — vía Posadas Reporta');
-  window.open('https://wa.me/?text=' + text, '_blank');
+  if (!r || r.isEmergency) return;
+  const uid = getUserId();
+  if (!r.confirmations) r.confirmations = [];
+  if (r.confirmations.includes(uid)) { alert('Ya confirmaste este reporte.'); return; }
+  r.confirmations.push(uid);
+  if (r.confirmations.length >= 2) r.verified = true;
+  const meta = getReportMeta(id);
+  meta.confirmations = r.confirmations; meta.verified = r.verified;
+  setReportMeta(id, meta);
+  renderAll();
+  if (selectedReportId === id) selectReport(id);
 }
 
-function shareWhatsApp() {
+function addComment() {
   if (!selectedReportId) return;
-  shareReportId(selectedReportId);
+  const input = document.getElementById('comment-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const r = reports.find(x => x.id === selectedReportId);
+  if (!r) return;
+  if (!r.comments) r.comments = [];
+  r.comments.push({ id: Date.now(), userId: getUserId(), text: text, createdAt: new Date().toISOString() });
+  const meta = getReportMeta(selectedReportId);
+  meta.comments = r.comments;
+  setReportMeta(selectedReportId, meta);
+  selectReport(selectedReportId);
+}
+
+function shareWhatsApp() { if (!selectedReportId) return; shareReportId(selectedReportId); }
+
+function shareReportId(id) {
+  const r = reports.find(x => x.id === id) || getQueue().find(x => x.id === id);
+  if (!r) return;
+  const text = encodeURIComponent('Reporte ' + (r.public_id || '') + ' en Posadas: ' + r.description + ' (' + r.category + ') — vía Posadas Reporta');
+  window.open('https://wa.me/?text=' + text, '_blank');
 }
 
 function escapeHtml(text) {
@@ -935,22 +992,48 @@ function formatDate(iso) {
   return d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-if (!localStorage.getItem(STORAGE_KEY + '_seeded')) {
-  const demo = [
-    { id: 1, lat: -27.3621, lng: -55.8934, category: 'bache', description: 'bache grande en calle bolívar y urquiza, peligroso para motos', photo: null, status: 'pendiente', votes: 4, votedBy: [], address: 'Calle Bolívar, Posadas, Misiones', comments: [{ author: 'vecino', text: 'pasé hoy y está peor, casi me caigo con la moto', createdAt: new Date(Date.now() - 3600000).toISOString() }], createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
-    { id: 2, lat: -27.3712, lng: -55.9056, category: 'alumbrado', description: 'lamparita quemada hace 3 semanas, calle muy oscura', photo: null, status: 'proceso', votes: 7, votedBy: [], address: 'Avenida Lavalle, Posadas, Misiones', comments: [], createdAt: new Date(Date.now() - 86400000 * 5).toISOString() },
-    { id: 3, lat: -27.3589, lng: -55.8887, category: 'basura', description: 'contenedor desbordado, hace mal olor', photo: null, status: 'pendiente', votes: 2, votedBy: [], address: null, comments: [{ author: 'maria', text: 'el camión no pasó esta semana', createdAt: new Date(Date.now() - 7200000).toISOString() }], createdAt: new Date(Date.now() - 86400000 * 1).toISOString() },
-    { id: 4, lat: -27.3655, lng: -55.8980, category: 'inseguridad', description: 'falta de iluminación en la plaza, varios vecinos reportaron robos', photo: null, status: 'pendiente', votes: 12, votedBy: [], address: 'Plaza San Martín, Posadas, Misiones', comments: [], createdAt: new Date(Date.now() - 86400000 * 3).toISOString() },
-    { id: 5, lat: -27.3600, lng: -55.8950, category: 'bache', description: 'varios pozos en la cuadra, rompió una cubierta', photo: null, status: 'resuelto', votes: 8, votedBy: [], address: 'Calle Entre Ríos, Posadas, Misiones', comments: [{ author: 'juan', text: 'ya arreglaron, gracias!', createdAt: new Date(Date.now() - 1800000).toISOString() }], createdAt: new Date(Date.now() - 86400000 * 10).toISOString() },
-  ];
-  reports = demo;
-  saveReports();
-  localStorage.setItem(STORAGE_KEY + '_seeded', 'true');
-  renderAll();
-} else {
-  loadReports();
-  renderAll();
+// ========== RANKING ==========
+function renderRanking() {
+  const container = document.getElementById('ranking-panel');
+  const queue = getQueue();
+  const all = [...reports, ...queue];
+  const barrios = {};
+  all.forEach(r => {
+    const barrio = r.neighborhood || 'Barrio desconocido';
+    if (!barrios[barrio]) barrios[barrio] = { name: barrio, total: 0, resueltos: 0, pendientes: 0, enProceso: 0, emergencias: 0 };
+    barrios[barrio].total++;
+    if (r.status === 'resolved') barrios[barrio].resueltos++;
+    else if (r.status === 'in_progress') barrios[barrio].enProceso++;
+    else barrios[barrio].pendientes++;
+    if (r.isEmergency) barrios[barrio].emergencias++;
+  });
+  const sorted = Object.values(barrios).sort((a, b) => b.resueltos - a.resueltos);
+  if (sorted.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Todavía no hay suficientes datos para el ranking.<br>¡Reportá problemas en tu barrio!</p></div>';
+    return;
+  }
+  container.innerHTML = sorted.map((b, i) => {
+    const posClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    return `<div class="ranking-item">
+      <div class="ranking-pos ${posClass}">${i + 1}</div>
+      <div class="ranking-info">
+        <h4>${escapeHtml(b.name)}</h4>
+        <p>${b.total} reportes · ${b.resueltos} resueltos · ${b.pendientes} pendientes${b.emergencias > 0 ? ' · ' + b.emergencias + ' emergencias' : ''}</p>
+      </div>
+      <div class="ranking-stats">
+        <div class="num">${b.resueltos}</div>
+        <div class="label">resueltos</div>
+      </div>
+    </div>`;
+  }).join('');
 }
+
+// ========== INIT ==========
+(async function init() {
+  updateOnlineStatus();
+  await loadReports();
+  renderAll();
+})();
 </script>
 </body>
 </html>
