@@ -33,7 +33,7 @@ Este archivo define las reglas obligatorias para cualquier persona o agente que 
 
 ## 4. Protección de secretos y variables de entorno
 
-- Nunca abrir, copiar, imprimir, registrar, revelar, versionar ni modificar `.env.local` sin una instrucción explícita del responsable técnico.
+- Se puede leer `.env.local` solo si es indispensable para ejecutar el proyecto, pero nunca mostrar, copiar, registrar ni modificar sus valores.
 - `.env.local`, archivos `*.local`, claves de servicio, tokens y credenciales deben permanecer fuera de Git.
 - Solo se permite comprobar si una variable requerida existe; nunca mostrar su valor.
 - En el frontend solo pueden utilizarse claves publicables diseñadas para exposición al navegador. Nunca usar `service_role` ni secretos administrativos en código cliente.
@@ -44,6 +44,46 @@ Variables frontend actualmente requeridas:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+## Reglas de seguridad y acciones prohibidas
+
+- No eliminar el proyecto de Supabase.
+- No cambiar, regenerar ni revelar claves.
+- No publicar en producción sin aprobación explícita.
+- No borrar tablas ni datos existentes.
+- No desactivar Row Level Security.
+- No usar secret keys o service role keys en React, Vite ni ningún código frontend.
+- No subir .env.local ni archivos con secretos a GitHub.
+- No ejecutar migraciones destructivas sin aprobación.
+- No modificar la base de datos remota sin mostrar previamente el SQL.
+- No ejecutar comandos destructivos sin explicar el impacto y esperar aprobación.
+
+Si una propuesta incluye cualquiera de estas instrucciones SQL:
+
+- DROP TABLE
+- TRUNCATE
+- DELETE sin una condición WHERE específica
+- ALTER COLUMN
+- DROP COLUMN
+- DROP POLICY
+- DISABLE ROW LEVEL SECURITY
+
+Debes detenerte antes de ejecutarla y mostrar:
+
+1. Qué cambiaría.
+2. Qué datos podrían perderse.
+3. Si existe una alternativa no destructiva.
+4. Cómo hacer respaldo.
+5. Cómo revertir el cambio.
+
+Esperá mi aprobación explícita antes de ejecutar ese SQL.
+
+Además:
+
+- Podés leer .env.local solo si es indispensable para ejecutar el proyecto, pero nunca mostrar, copiar, registrar ni modificar sus valores.
+- No incluyas secretos en logs, commits, documentación ni respuestas.
+- Trabajá preferentemente en una rama separada.
+- Ejecutá build y lint antes de considerar terminada una tarea.
 
 ## 5. Reglas de Supabase
 
