@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import type { Category } from '../types/category'
 import type { ReportLocation, Urgency } from '../types/report'
 
@@ -14,6 +14,43 @@ type ReportPreviewProps = {
   onConfirm: () => void
 }
 
+function ReportPhotoPreview({ photo }: { photo: File }) {
+  const [source, setSource] = useState<string | null>(null)
+
+  useEffect(() => {
+    const reader = new FileReader()
+
+    const handleLoad = () => {
+      if (typeof reader.result === 'string') {
+        setSource(reader.result)
+      }
+    }
+
+    reader.addEventListener('load', handleLoad)
+    reader.readAsDataURL(photo)
+
+    return () => {
+      reader.removeEventListener('load', handleLoad)
+
+      if (reader.readyState === FileReader.LOADING) {
+        reader.abort()
+      }
+    }
+  }, [photo])
+
+  if (!source) {
+    return <p role="status">Preparando vista previa…</p>
+  }
+
+  return (
+    <img
+      src={source}
+      alt="Vista previa del reporte"
+      className="photo-preview"
+    />
+  )
+}
+
 function ReportPreview({
   location,
   category,
@@ -25,19 +62,6 @@ function ReportPreview({
   onBack,
   onConfirm,
 }: ReportPreviewProps) {
-
-  const photoPreview = useMemo(
-    () => (photo ? URL.createObjectURL(photo) : null),
-    [photo]
-  )
-
-  useEffect(() => {
-    return () => {
-      if (photoPreview) {
-        URL.revokeObjectURL(photoPreview)
-      }
-    }
-  }, [photoPreview])
 
   return (
 
@@ -141,7 +165,7 @@ function ReportPreview({
 
         </div>
 
-        {photoPreview && (
+        {photo && (
 
           <div className="preview-item">
 
@@ -149,10 +173,9 @@ function ReportPreview({
               📸 Fotografía
             </strong>
 
-            <img
-              src={photoPreview}
-              alt="Vista previa del reporte"
-              className="photo-preview"
+            <ReportPhotoPreview
+              key={`${photo.name}-${photo.size}-${photo.lastModified}`}
+              photo={photo}
             />
 
           </div>
