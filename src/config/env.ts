@@ -1,0 +1,21 @@
+function requireEnvironmentVariable(
+  name: string,
+  value: string | undefined
+): string {
+  if (!value?.trim()) {
+    throw new Error(`Falta la variable de entorno requerida: ${name}`)
+  }
+
+  return value
+}
+
+export const env = {
+  supabaseUrl: requireEnvironmentVariable(
+    'VITE_SUPABASE_URL',
+    import.meta.env.VITE_SUPABASE_URL
+  ),
+  supabasePublishableKey: requireEnvironmentVariable(
+    'VITE_SUPABASE_PUBLISHABLE_KEY',
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+  ),
+}
