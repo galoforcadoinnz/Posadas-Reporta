@@ -128,20 +128,29 @@ El archivo `supabase/inventory/phase_1_read_only_inventory.sql` contiene únicam
 - cantidades de filas;
 - distribución agregada de urgencias y estados;
 - conteos de nulabilidad, coordenadas inválidas y relaciones huérfanas;
-- cantidad de grupos de nombres duplicados.
+- cantidad de grupos de nombres duplicados;
+- calidad agregada del campo heredado `reports.address`;
+- rango temporal de creación de categorías, subcategorías y reportes;
+- catálogos reproducibles de categorías y subcategorías con sus UUID actuales.
 
-El inventario no selecciona descripciones, direcciones, coordenadas, UUID de reportes ni otros datos de filas individuales.
+El inventario no equivale todavía a un DDL reproducible exacto. La línea base de Fase 1B requerirá un export autorizado del esquema o una reconstrucción revisada a partir de la evidencia obtenida.
+
+Los catálogos sí incluyen sus identificadores internos, nombres y metadatos no personales para poder revisar el futuro seed y conservar las relaciones y UUID actuales. Su salida debe permanecer local hasta completar esa revisión y no debe copiarse a canales públicos sin autorización.
+
+Los reportes nunca deben listarse individualmente. El inventario no selecciona descripciones, direcciones, coordenadas, UUID de reportes ni otros datos de sus filas individuales; solo obtiene conteos, distribuciones y rangos agregados.
 
 ## Procedimiento de ejecución futura
 
 1. Obtener aprobación explícita para consultar el entorno objetivo.
 2. Ejecutar el archivo manualmente con un rol autorizado de solo lectura.
 3. No modificar el script dentro del editor remoto.
-4. Guardar la salida fuera del repositorio hasta revisarla.
+4. Guardar la salida fuera del repositorio y mantener localmente los resultados de los catálogos hasta revisar el futuro seed.
 5. Eliminar o anonimizar metadatos internos innecesarios antes de compartirla.
-6. Comparar la salida con el frontend y la auditoría.
-7. Resolver inconsistencias y decisiones de mapeo.
-8. Recién entonces redactar migraciones definitivas para revisión.
+6. No copiar los resultados de los catálogos a canales públicos sin revisión.
+7. Comparar la salida con el frontend y la auditoría.
+8. Resolver inconsistencias y decisiones de mapeo.
+9. Obtener un export autorizado del esquema o reconstruir y revisar la línea base a partir de la evidencia obtenida.
+10. Recién entonces redactar migraciones definitivas para revisión.
 
 ## Condiciones para pasar a Fase 1B
 
@@ -149,7 +158,7 @@ El inventario no selecciona descripciones, direcciones, coordenadas, UUID de rep
 - confirmación de que los registros actuales pertenecen a Posadas o clasificación alternativa documentada;
 - valores reales de `status` y `urgency` inventariados;
 - orfandad y coordenadas inválidas cuantificadas;
-- DDL actual reproducible;
+- línea base del esquema obtenida mediante un export autorizado o una reconstrucción revisada;
 - estrategia de backfill aprobada;
 - SQL completo mostrado antes de cualquier aplicación remota;
 - respaldo y reversión documentados.

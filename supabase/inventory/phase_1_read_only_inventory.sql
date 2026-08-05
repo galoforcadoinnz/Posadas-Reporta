@@ -300,3 +300,55 @@ FROM (
   GROUP BY category_id, LOWER(BTRIM(name))
   HAVING COUNT(*) > 1
 ) AS duplicate_subcategory_names;
+
+-- 15. Calidad del campo address, sin mostrar direcciones individuales.
+SELECT
+  COUNT(*) FILTER (WHERE address IS NULL) AS null_address_count,
+  COUNT(*) FILTER (WHERE address IS NOT NULL) AS non_null_address_count,
+  COUNT(*) FILTER (
+    WHERE address IS NOT NULL
+      AND BTRIM(address) = ''
+  ) AS blank_address_count
+FROM public.reports;
+
+-- 16. Rango temporal por tabla, sin mostrar filas individuales.
+SELECT
+  'categories' AS table_name,
+  MIN(created_at) AS earliest_created_at,
+  MAX(created_at) AS latest_created_at
+FROM public.categories
+UNION ALL
+SELECT
+  'subcategories' AS table_name,
+  MIN(created_at) AS earliest_created_at,
+  MAX(created_at) AS latest_created_at
+FROM public.subcategories
+UNION ALL
+SELECT
+  'reports' AS table_name,
+  MIN(created_at) AS earliest_created_at,
+  MAX(created_at) AS latest_created_at
+FROM public.reports
+ORDER BY table_name;
+
+-- 17. Catálogo reproducible de categorías para preservar UUID actuales.
+SELECT
+  id,
+  name,
+  description,
+  icon,
+  is_active,
+  created_at
+FROM public.categories
+ORDER BY name, id;
+
+-- 18. Catálogo reproducible de subcategorías y sus relaciones actuales.
+SELECT
+  id,
+  category_id,
+  name,
+  description,
+  is_active,
+  created_at
+FROM public.subcategories
+ORDER BY category_id, name, id;
