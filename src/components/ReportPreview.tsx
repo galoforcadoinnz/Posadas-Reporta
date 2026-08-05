@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { Category } from '../types/category'
 import type { ReportLocation, Urgency } from '../types/report'
 
@@ -24,19 +24,18 @@ function ReportPreview({
   onConfirm,
 }: ReportPreviewProps) {
 
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const photoPreview = useMemo(
+    () => (photo ? URL.createObjectURL(photo) : null),
+    [photo]
+  )
 
   useEffect(() => {
-    if (!photo) {
-      setPhotoPreview(null)
-      return
+    return () => {
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview)
+      }
     }
-
-    const objectUrl = URL.createObjectURL(photo)
-    setPhotoPreview(objectUrl)
-
-    return () => URL.revokeObjectURL(objectUrl)
-  }, [photo])
+  }, [photoPreview])
 
   return (
 
