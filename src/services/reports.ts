@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { Urgency } from '../types/report'
 
 export type CreateReportInput = {
   categoryId: string
@@ -7,13 +8,13 @@ export type CreateReportInput = {
   latitude: number
   longitude: number
   address?: string | null
-  urgency: 'low' | 'medium' | 'high'
+  urgency: Urgency
 }
 
 export async function createReport(
   input: CreateReportInput
-) {
-  const { data, error } = await supabase
+): Promise<void> {
+  const { error } = await supabase
     .from('reports')
     .insert({
       category_id: input.categoryId,
@@ -25,8 +26,6 @@ export async function createReport(
       urgency: input.urgency,
       status: 'pending',
     })
-    .select('id, created_at, status')
-    .single()
 
   if (error) {
     console.error('Error al crear el reporte:', error)
@@ -35,6 +34,4 @@ export async function createReport(
       `${error.message}${error.details ? ` — ${error.details}` : ''}`
     )
   }
-
-  return data
 }

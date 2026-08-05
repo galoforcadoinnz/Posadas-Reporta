@@ -150,6 +150,11 @@ button {
   opacity: 0.9;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 /* Adaptación para celulares */
 
 @media (max-width: 768px) {
