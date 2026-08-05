@@ -37,7 +37,6 @@ function ReportCategory({
 
   const handleContinue = () => {
     if (!selectedCategory) {
-      alert('Seleccioná una categoría para continuar.')
       return
     }
 
