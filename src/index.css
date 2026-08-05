@@ -1,0 +1,417 @@
+:root {
+  font-family: Arial, sans-serif;
+  color: #1f2937;
+  background: #f4f7f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button {
+  font-family: inherit;
+}
+
+.app {
+  min-height: 100vh;
+  background: #f4f7f6;
+}
+
+.header {
+  background: #0f766e;
+  color: white;
+  padding: 20px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.header p {
+  margin: 8px 0 0;
+}
+
+/* Zona superior */
+
+.hero {
+  background: white;
+  padding: 24px;
+  text-align: center;
+}
+
+.hero h2 {
+  margin-top: 0;
+}
+
+.report-button {
+  background: #16a34a;
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.report-button:hover {
+  opacity: 0.9;
+}
+
+/* Contenedor del mapa */
+
+.map-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Controles del mapa */
+
+.map-controls {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Botón GPS */
+
+.location-button {
+  background: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.location-button:hover {
+  background: #f0fdf4;
+}
+
+/* Instrucción */
+
+.map-instruction {
+  background: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Mapa */
+
+.posadas-map {
+  width: 100%;
+  height: 65vh;
+  min-height: 450px;
+}
+
+/* Ubicación seleccionada */
+
+.selected-location {
+  background: white;
+  padding: 18px;
+  text-align: center;
+  border-top: 1px solid #ddd;
+}
+
+.selected-location p {
+  margin: 10px 0;
+  color: #4b5563;
+}
+
+/* Botón continuar */
+
+.continue-button {
+  background: #0f766e;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.continue-button:hover {
+  opacity: 0.9;
+}
+
+/* Adaptación para celulares */
+
+@media (max-width: 768px) {
+
+  .header h1 {
+    font-size: 23px;
+  }
+
+  .hero {
+    padding: 18px;
+  }
+
+  .map-controls {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .location-button {
+    width: fit-content;
+  }
+
+  .map-instruction {
+    max-width: 300px;
+  }
+
+  .posadas-map {
+    height: 60vh;
+    min-height: 400px;
+  }
+
+}/* ========================================
+   FORMULARIO DE DETALLES
+======================================== */
+
+.details-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+.details-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.details-header h2 {
+  margin-bottom: 8px;
+}
+
+.report-summary {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.form-group {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0f766e;
+}
+
+.form-group small {
+  display: block;
+  text-align: right;
+  margin-top: 5px;
+  color: #666;
+}
+
+.form-group input[type="file"] {
+  width: 100%;
+}
+
+.photo-selected {
+  color: #0f766e;
+  font-weight: bold;
+}
+
+.urgency-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.urgency-options label {
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.details-footer {
+  text-align: center;
+  margin-top: 25px;
+}
+
+/* ========================================
+   BOTÓN VOLVER
+======================================== */
+
+.back-button {
+  background: transparent;
+  border: none;
+  color: #0f766e;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+/* ========================================
+   PREVISUALIZACIÓN
+======================================== */
+
+.preview-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+.preview-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.preview-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.preview-item {
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+.preview-item strong {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.preview-item p {
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.photo-preview {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.preview-warning {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.preview-footer {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.edit-button {
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.confirm-button {
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 13px 22px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* ========================================
+   CELULARES
+======================================== */
+
+@media (max-width: 600px) {
+
+  .details-section,
+  .preview-section {
+    padding: 18px;
+  }
+
+  .summary-item {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .urgency-options {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .preview-footer {
+    flex-direction: column;
+  }
+
+  .edit-button,
+  .confirm-button {
+    width: 100%;
+  }
+
+}
