@@ -9,11 +9,7 @@ export async function getCategories(): Promise<Category[]> {
     .order('name')
 
   if (error) {
-    console.error('Error al obtener categorías:', error)
-
-    throw new Error(
-      `${error.message}${error.details ? ` — ${error.details}` : ''}`
-    )
+    throw new Error('No se pudieron obtener las categorías.')
   }
 
   return data ?? []

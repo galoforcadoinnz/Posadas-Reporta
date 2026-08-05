@@ -29,10 +29,18 @@ function App() {
   const [isSubmitting, setIsSubmitting] =
     useState(false)
 
+  const [submissionError, setSubmissionError] =
+    useState<string | null>(null)
+
+  const [successMessage, setSuccessMessage] =
+    useState<string | null>(null)
+
   const handleLocationContinue = (
     latitude: number,
     longitude: number
   ) => {
+    setSuccessMessage(null)
+
     setReportDraft((currentDraft) => ({
       ...currentDraft,
       location: { latitude, longitude },
@@ -82,9 +90,7 @@ function App() {
       !reportDraft.category ||
       !reportDraft.description.trim()
     ) {
-      alert(
-        'Faltan datos obligatorios del reporte.'
-      )
+      setSubmissionError('Faltan datos obligatorios del reporte.')
       return
     }
 
@@ -93,6 +99,7 @@ function App() {
     }
 
     setIsSubmitting(true)
+    setSubmissionError(null)
 
     try {
       await createReport({
@@ -105,15 +112,11 @@ function App() {
         urgency: reportDraft.urgency,
       })
 
-      alert('Reporte creado correctamente.')
-
       setReportDraft(INITIAL_REPORT_DRAFT)
       setReportStep('map')
-    } catch (error) {
-      console.error('No se pudo guardar el reporte:', error)
-      alert(
-        'No se pudo guardar el reporte.'
-      )
+      setSuccessMessage('Reporte creado correctamente.')
+    } catch {
+      setSubmissionError('No se pudo guardar el reporte. Intentá nuevamente.')
     } finally {
       setIsSubmitting(false)
     }
@@ -128,6 +131,12 @@ function App() {
           Informá los problemas de tu ciudad
         </p>
       </header>
+
+      {successMessage && (
+        <p className="app-feedback success" role="status">
+          {successMessage}
+        </p>
+      )}
 
       {reportStep === 'map' && (
         <main>
@@ -186,6 +195,7 @@ function App() {
               photo={reportDraft.photo}
               urgency={reportDraft.urgency}
               isSubmitting={isSubmitting}
+              submissionError={submissionError}
               onBack={handleBackToDetails}
               onConfirm={handleConfirmReport}
             />

@@ -9,6 +9,7 @@ type ReportPreviewProps = {
   photo: File | null
   urgency: Urgency
   isSubmitting: boolean
+  submissionError: string | null
   onBack: () => void
   onConfirm: () => void
 }
@@ -20,6 +21,7 @@ function ReportPreview({
   photo,
   urgency,
   isSubmitting,
+  submissionError,
   onBack,
   onConfirm,
 }: ReportPreviewProps) {
@@ -188,6 +190,12 @@ function ReportPreview({
         </button>
 
       </div>
+
+      {submissionError && (
+        <p className="submission-error" role="alert">
+          {submissionError}
+        </p>
+      )}
 
     </section>
 

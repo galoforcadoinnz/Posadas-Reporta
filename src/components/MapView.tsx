@@ -84,17 +84,19 @@ function MapView({
       : null
   )
 
+  const [isLocating, setIsLocating] = useState(false)
+  const [locationError, setLocationError] = useState<string | null>(null)
+
   // Obtener ubicación mediante GPS
   const getCurrentLocation = () => {
 
     if (!navigator.geolocation) {
-
-      alert(
-        'Tu navegador no permite obtener la ubicación.'
-      )
-
+      setLocationError('Tu navegador no permite obtener la ubicación.')
       return
     }
+
+    setIsLocating(true)
+    setLocationError(null)
 
     navigator.geolocation.getCurrentPosition(
 
@@ -111,13 +113,16 @@ function MapView({
           longitude,
         ])
 
+        setIsLocating(false)
+
       },
 
       () => {
-
-        alert(
+        setLocationError(
           'No pudimos obtener tu ubicación. Verificá los permisos de ubicación de tu navegador.'
         )
+
+        setIsLocating(false)
 
       }
 
@@ -136,14 +141,15 @@ function MapView({
       longitude,
     ])
 
+    setLocationError(null)
+
   }
 
   // Continuar con la ubicación seleccionada
   const handleContinue = () => {
 
     if (!selectedLocation) {
-
-      alert(
+      setLocationError(
         'Primero seleccioná en el mapa dónde está el problema.'
       )
 
@@ -168,9 +174,16 @@ function MapView({
           type="button"
           className="location-button"
           onClick={getCurrentLocation}
+          disabled={isLocating}
         >
-          📍 Usar mi ubicación
+          {isLocating ? 'Buscando ubicación…' : '📍 Usar mi ubicación'}
         </button>
+
+        {locationError && (
+          <p className="map-error" role="alert">
+            {locationError}
+          </p>
+        )}
 
         <div className="map-instruction">
 

@@ -25,14 +25,8 @@ function ReportCategory({
       try {
         const data = await getCategories()
         setCategories(data)
-      } catch (err) {
-        console.error('Error al cargar categorías:', err)
-
-        if (err instanceof Error) {
-          setError(err.message)
-        } else {
-          setError('No se pudieron cargar las categorías.')
-        }
+      } catch {
+        setError('No se pudieron cargar las categorías. Intentá nuevamente.')
       } finally {
         setLoading(false)
       }
@@ -70,13 +64,13 @@ function ReportCategory({
       </div>
 
       {loading && (
-        <p className="category-message">
+        <p className="category-message" role="status">
           Cargando categorías...
         </p>
       )}
 
       {error && (
-        <div className="category-error">
+        <div className="category-error" role="alert">
           <strong>
             No pudimos cargar las categorías.
           </strong>

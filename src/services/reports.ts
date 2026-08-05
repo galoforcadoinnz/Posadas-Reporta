@@ -28,10 +28,6 @@ export async function createReport(
     })
 
   if (error) {
-    console.error('Error al crear el reporte:', error)
-
-    throw new Error(
-      `${error.message}${error.details ? ` — ${error.details}` : ''}`
-    )
+    throw new Error('No se pudo crear el reporte.')
   }
 }

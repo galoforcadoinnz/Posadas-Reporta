@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Category } from '../types/category'
 import type {
   ReportDetailsDraft,
@@ -23,6 +24,9 @@ function ReportDetails({
   onBack,
 }: ReportDetailsProps) {
 
+  const [validationError, setValidationError] =
+    useState<string | null>(null)
+
   const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -38,14 +42,13 @@ function ReportDetails({
 
     if (!details.description.trim()) {
 
-      alert(
-        'Por favor, describí brevemente el problema.'
-      )
+      setValidationError('Por favor, describí brevemente el problema.')
 
       return
 
     }
 
+    setValidationError(null)
     onContinue()
 
   }
@@ -125,9 +128,11 @@ function ReportDetails({
         <textarea
           id="description"
           value={details.description}
-          onChange={(event) =>
+          aria-describedby={validationError ? 'description-error' : undefined}
+          onChange={(event) => {
+            setValidationError(null)
             onChange({ description: event.target.value })
-          }
+          }}
           placeholder="Por ejemplo: Hay un bache grande que ocupa casi todo el carril..."
           rows={5}
           maxLength={1000}
@@ -138,6 +143,12 @@ function ReportDetails({
           {details.description.length}/1000 caracteres
 
         </small>
+
+        {validationError && (
+          <p id="description-error" className="form-error" role="alert">
+            {validationError}
+          </p>
+        )}
 
       </div>
 
