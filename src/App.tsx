@@ -5,45 +5,38 @@ import ReportCategory from './components/ReportCategory'
 import ReportDetails from './components/ReportDetails'
 import ReportPreview from './components/ReportPreview'
 import type { Category } from './types/category'
+import type {
+  ReportDetailsDraft,
+  ReportDraft,
+  ReportStep,
+} from './types/report'
 
-type ReportLocation = {
-  latitude: number
-  longitude: number
+const INITIAL_REPORT_DRAFT: ReportDraft = {
+  location: null,
+  category: null,
+  description: '',
+  photo: null,
+  urgency: 'medium',
 }
-
-type ReportStep =
-  | 'map'
-  | 'category'
-  | 'details'
-  | 'preview'
 
 function App() {
   const [reportStep, setReportStep] =
     useState<ReportStep>('map')
 
-  const [reportLocation, setReportLocation] =
-    useState<ReportLocation | null>(null)
+  const [reportDraft, setReportDraft] =
+    useState<ReportDraft>(INITIAL_REPORT_DRAFT)
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<Category | null>(null)
-
-  const [description, setDescription] =
-    useState('')
-
-  const [photo, setPhoto] =
-    useState<File | null>(null)
-
-  const [urgency, setUrgency] =
-    useState('medium')
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
 
   const handleLocationContinue = (
     latitude: number,
     longitude: number
   ) => {
-    setReportLocation({
-      latitude,
-      longitude,
-    })
+    setReportDraft((currentDraft) => ({
+      ...currentDraft,
+      location: { latitude, longitude },
+    }))
 
     setReportStep('category')
   }
@@ -51,18 +44,23 @@ function App() {
   const handleCategoryContinue = (
     category: Category
   ) => {
-    setSelectedCategory(category)
+    setReportDraft((currentDraft) => ({
+      ...currentDraft,
+      category,
+    }))
     setReportStep('details')
   }
 
-  const handleDetailsContinue = (
-    reportDescription: string,
-    reportPhoto: File | null,
-    reportUrgency: string
+  const handleDetailsChange = (
+    changes: Partial<ReportDetailsDraft>
   ) => {
-    setDescription(reportDescription)
-    setPhoto(reportPhoto)
-    setUrgency(reportUrgency)
+    setReportDraft((currentDraft) => ({
+      ...currentDraft,
+      ...changes,
+    }))
+  }
+
+  const handleDetailsContinue = () => {
     setReportStep('preview')
   }
 
@@ -79,53 +77,47 @@ function App() {
   }
 
   const handleConfirmReport = async () => {
-  if (!reportLocation || !selectedCategory) {
-    alert(
-      'Faltan datos obligatorios del reporte.'
-    )
-    return
-  }
-
-  try {
-    const createdReport = await createReport({
-      categoryId: selectedCategory.id,
-      subcategoryId: null,
-      description,
-      latitude: reportLocation.latitude,
-      longitude: reportLocation.longitude,
-      address: null,
-      urgency:
-        urgency === 'baja'
-          ? 'low'
-          : urgency === 'alta'
-            ? 'high'
-            : 'medium',
-    })
-
-    alert(
-      `Reporte creado correctamente.\nID: ${createdReport.id}`
-    )
-
-    setReportStep('map')
-    setReportLocation(null)
-    setSelectedCategory(null)
-    setDescription('')
-    setPhoto(null)
-    setUrgency('medium')
-  } catch (err) {
-    console.error(err)
-
-    if (err instanceof Error) {
+    if (
+      !reportDraft.location ||
+      !reportDraft.category ||
+      !reportDraft.description.trim()
+    ) {
       alert(
-        `No se pudo guardar el reporte: ${err.message}`
+        'Faltan datos obligatorios del reporte.'
       )
-    } else {
+      return
+    }
+
+    if (isSubmitting) {
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await createReport({
+        categoryId: reportDraft.category.id,
+        subcategoryId: null,
+        description: reportDraft.description.trim(),
+        latitude: reportDraft.location.latitude,
+        longitude: reportDraft.location.longitude,
+        address: null,
+        urgency: reportDraft.urgency,
+      })
+
+      alert('Reporte creado correctamente.')
+
+      setReportDraft(INITIAL_REPORT_DRAFT)
+      setReportStep('map')
+    } catch (error) {
+      console.error('No se pudo guardar el reporte:', error)
       alert(
         'No se pudo guardar el reporte.'
       )
+    } finally {
+      setIsSubmitting(false)
     }
   }
-}
 
   return (
     <div className="app">
@@ -151,15 +143,17 @@ function App() {
           </section>
 
           <MapView
+            initialLocation={reportDraft.location}
             onContinue={handleLocationContinue}
           />
         </main>
       )}
 
       {reportStep === 'category' &&
-        reportLocation && (
+        reportDraft.location && (
           <main>
             <ReportCategory
+              initialCategory={reportDraft.category}
               onContinue={handleCategoryContinue}
               onBack={handleBackToMap}
             />
@@ -167,12 +161,14 @@ function App() {
         )}
 
       {reportStep === 'details' &&
-        reportLocation &&
-        selectedCategory && (
+        reportDraft.location &&
+        reportDraft.category && (
           <main>
             <ReportDetails
-              location={reportLocation}
-              category={selectedCategory}
+              location={reportDraft.location}
+              category={reportDraft.category}
+              details={reportDraft}
+              onChange={handleDetailsChange}
               onContinue={handleDetailsContinue}
               onBack={handleBackToCategory}
             />
@@ -180,15 +176,16 @@ function App() {
         )}
 
       {reportStep === 'preview' &&
-        reportLocation &&
-        selectedCategory && (
+        reportDraft.location &&
+        reportDraft.category && (
           <main>
             <ReportPreview
-              location={reportLocation}
-              category={selectedCategory}
-              description={description}
-              photo={photo}
-              urgency={urgency}
+              location={reportDraft.location}
+              category={reportDraft.category}
+              description={reportDraft.description}
+              photo={reportDraft.photo}
+              urgency={reportDraft.urgency}
+              isSubmitting={isSubmitting}
               onBack={handleBackToDetails}
               onConfirm={handleConfirmReport}
             />

@@ -3,17 +3,19 @@ import { getCategories } from '../services/categories'
 import type { Category } from '../types/category'
 
 type ReportCategoryProps = {
+  initialCategory: Category | null
   onContinue: (category: Category) => void
   onBack: () => void
 }
 
 function ReportCategory({
+  initialCategory,
   onContinue,
   onBack,
 }: ReportCategoryProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedCategory, setSelectedCategory] =
-    useState<Category | null>(null)
+    useState<Category | null>(initialCategory)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

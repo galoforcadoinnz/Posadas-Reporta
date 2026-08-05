@@ -1,43 +1,27 @@
-import { useState } from 'react'
-
-type Category = {
-  id: string
-  icon: string
-  name: string
-  description: string
-}
-
-type ReportLocation = {
-  latitude: number
-  longitude: number
-}
+import type { Category } from '../types/category'
+import type {
+  ReportDetailsDraft,
+  ReportLocation,
+  Urgency,
+} from '../types/report'
 
 type ReportDetailsProps = {
   location: ReportLocation
   category: Category
-  onContinue: (
-    description: string,
-    photo: File | null,
-    urgency: string
-  ) => void
+  details: ReportDetailsDraft
+  onChange: (changes: Partial<ReportDetailsDraft>) => void
+  onContinue: () => void
   onBack: () => void
 }
 
 function ReportDetails({
   location,
   category,
+  details,
+  onChange,
   onContinue,
   onBack,
 }: ReportDetailsProps) {
-
-  const [description, setDescription] =
-    useState('')
-
-  const [photo, setPhoto] =
-    useState<File | null>(null)
-
-  const [urgency, setUrgency] =
-    useState('media')
 
   const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
@@ -46,13 +30,13 @@ function ReportDetails({
     const file =
       event.target.files?.[0] || null
 
-    setPhoto(file)
+    onChange({ photo: file })
 
   }
 
   const handleContinue = () => {
 
-    if (!description.trim()) {
+    if (!details.description.trim()) {
 
       alert(
         'Por favor, describí brevemente el problema.'
@@ -62,11 +46,7 @@ function ReportDetails({
 
     }
 
-    onContinue(
-      description,
-      photo,
-      urgency
-    )
+    onContinue()
 
   }
 
@@ -75,6 +55,7 @@ function ReportDetails({
     <section className="details-section">
 
       <button
+        type="button"
         className="back-button"
         onClick={onBack}
       >
@@ -121,7 +102,7 @@ function ReportDetails({
 
           <span>
 
-            {category.icon}
+            {category.icon ?? '📍'}
 
             {' '}
 
@@ -143,9 +124,9 @@ function ReportDetails({
 
         <textarea
           id="description"
-          value={description}
+          value={details.description}
           onChange={(event) =>
-            setDescription(event.target.value)
+            onChange({ description: event.target.value })
           }
           placeholder="Por ejemplo: Hay un bache grande que ocupa casi todo el carril..."
           rows={5}
@@ -154,7 +135,7 @@ function ReportDetails({
 
         <small>
 
-          {description.length}/1000 caracteres
+          {details.description.length}/1000 caracteres
 
         </small>
 
@@ -176,7 +157,7 @@ function ReportDetails({
           onChange={handlePhotoChange}
         />
 
-        {photo && (
+        {details.photo && (
 
           <p className="photo-selected">
 
@@ -184,7 +165,7 @@ function ReportDetails({
 
             {' '}
 
-            {photo.name}
+            {details.photo.name}
 
           </p>
 
@@ -207,10 +188,10 @@ function ReportDetails({
             <input
               type="radio"
               name="urgency"
-              value="baja"
-              checked={urgency === 'baja'}
+              value="low"
+              checked={details.urgency === 'low'}
               onChange={(event) =>
-                setUrgency(event.target.value)
+                onChange({ urgency: event.target.value as Urgency })
               }
             />
 
@@ -223,10 +204,10 @@ function ReportDetails({
             <input
               type="radio"
               name="urgency"
-              value="media"
-              checked={urgency === 'media'}
+              value="medium"
+              checked={details.urgency === 'medium'}
               onChange={(event) =>
-                setUrgency(event.target.value)
+                onChange({ urgency: event.target.value as Urgency })
               }
             />
 
@@ -239,10 +220,10 @@ function ReportDetails({
             <input
               type="radio"
               name="urgency"
-              value="alta"
-              checked={urgency === 'alta'}
+              value="high"
+              checked={details.urgency === 'high'}
               onChange={(event) =>
-                setUrgency(event.target.value)
+                onChange({ urgency: event.target.value as Urgency })
               }
             />
 
@@ -257,6 +238,7 @@ function ReportDetails({
       <div className="details-footer">
 
         <button
+          type="button"
           className="continue-button"
           onClick={handleContinue}
         >

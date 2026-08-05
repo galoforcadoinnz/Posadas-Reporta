@@ -1,21 +1,14 @@
-type Category = {
-  id: string
-  icon: string
-  name: string
-  description: string
-}
-
-type ReportLocation = {
-  latitude: number
-  longitude: number
-}
+import { useEffect, useState } from 'react'
+import type { Category } from '../types/category'
+import type { ReportLocation, Urgency } from '../types/report'
 
 type ReportPreviewProps = {
   location: ReportLocation
   category: Category
   description: string
   photo: File | null
-  urgency: string
+  urgency: Urgency
+  isSubmitting: boolean
   onBack: () => void
   onConfirm: () => void
 }
@@ -26,22 +19,34 @@ function ReportPreview({
   description,
   photo,
   urgency,
+  isSubmitting,
   onBack,
   onConfirm,
 }: ReportPreviewProps) {
 
-  const photoPreview =
-    photo
-      ? URL.createObjectURL(photo)
-      : null
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreview(null)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(photo)
+    setPhotoPreview(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [photo])
 
   return (
 
     <section className="preview-section">
 
       <button
+        type="button"
         className="back-button"
         onClick={onBack}
+        disabled={isSubmitting}
       >
         ← Editar reporte
       </button>
@@ -95,7 +100,7 @@ function ReportPreview({
 
           <p>
 
-            {category.icon}
+            {category.icon ?? '📍'}
 
             {' '}
 
@@ -125,11 +130,11 @@ function ReportPreview({
 
           <p>
 
-            {urgency === 'baja' && '🟢 Baja'}
+            {urgency === 'low' && '🟢 Baja'}
 
-            {urgency === 'media' && '🟡 Media'}
+            {urgency === 'medium' && '🟡 Media'}
 
-            {urgency === 'alta' && '🔴 Alta'}
+            {urgency === 'high' && '🔴 Alta'}
 
           </p>
 
@@ -157,27 +162,30 @@ function ReportPreview({
 
       <div className="preview-warning">
 
-        ⚠️ Este reporte todavía no fue enviado.
-        Al confirmar, en la siguiente versión
-        podremos guardarlo y asignarle un número
-        de seguimiento.
+        ⚠️ Al confirmar se enviarán la ubicación, categoría,
+        descripción y urgencia. La fotografía se mantiene en
+        esta vista previa, pero todavía no se guarda.
 
       </div>
 
       <div className="preview-footer">
 
         <button
+          type="button"
           className="edit-button"
           onClick={onBack}
+          disabled={isSubmitting}
         >
           ✏️ Editar
         </button>
 
         <button
+          type="button"
           className="confirm-button"
           onClick={onConfirm}
+          disabled={isSubmitting}
         >
-          ✅ Confirmar reporte
+          {isSubmitting ? 'Enviando…' : '✅ Confirmar reporte'}
         </button>
 
       </div>

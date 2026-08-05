@@ -8,11 +8,16 @@ import {
 
 import L from 'leaflet'
 import { useState } from 'react'
+import type { ReportLocation } from '../types/report'
 
 import 'leaflet/dist/leaflet.css'
 
 // Configuración de los iconos de Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl
+const defaultIconPrototype = L.Icon.Default.prototype as {
+  _getIconUrl?: () => string
+}
+
+delete defaultIconPrototype._getIconUrl
 
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -32,6 +37,7 @@ const POSADAS_CENTER: [number, number] = [
 ]
 
 type MapViewProps = {
+  initialLocation: ReportLocation | null
   onContinue: (
     latitude: number,
     longitude: number
@@ -65,13 +71,18 @@ function MapClickHandler({
 }
 
 function MapView({
+  initialLocation,
   onContinue,
 }: MapViewProps) {
 
   const [
     selectedLocation,
     setSelectedLocation,
-  ] = useState<[number, number] | null>(null)
+  ] = useState<[number, number] | null>(() =>
+    initialLocation
+      ? [initialLocation.latitude, initialLocation.longitude]
+      : null
+  )
 
   // Obtener ubicación mediante GPS
   const getCurrentLocation = () => {
@@ -154,6 +165,7 @@ function MapView({
       <div className="map-controls">
 
         <button
+          type="button"
           className="location-button"
           onClick={getCurrentLocation}
         >
@@ -242,6 +254,7 @@ function MapView({
           </p>
 
           <button
+            type="button"
             className="continue-button"
             onClick={handleContinue}
           >
