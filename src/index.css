@@ -38,6 +38,20 @@ button {
   margin: 8px 0 0;
 }
 
+.app-feedback {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 14px 18px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.app-feedback.success {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
 /* Zona superior */
 
 .hero {
@@ -111,6 +125,17 @@ button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+.map-error {
+  max-width: 320px;
+  margin: 0;
+  padding: 10px 14px;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
 /* Mapa */
 
 .posadas-map {
@@ -153,6 +178,99 @@ button {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+/* Categorías */
+
+.category-section {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 25px;
+}
+
+.category-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.category-header h2 {
+  margin-bottom: 8px;
+}
+
+.category-message,
+.category-error {
+  padding: 18px;
+  text-align: center;
+  background: white;
+  border-radius: 12px;
+}
+
+.category-error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.retry-button {
+  padding: 10px 18px;
+  color: white;
+  font-weight: bold;
+  background: #0f766e;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 180px;
+  padding: 20px;
+  color: #1f2937;
+  text-align: center;
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+}
+
+.category-card:hover,
+.category-card:focus-visible {
+  border-color: #5eead4;
+}
+
+.category-card.selected {
+  background: #f0fdfa;
+  border-color: #0f766e;
+}
+
+.category-icon {
+  margin-bottom: 10px;
+  font-size: 34px;
+}
+
+.category-name {
+  font-size: 17px;
+  font-weight: bold;
+}
+
+.category-description {
+  margin-top: 8px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.category-footer {
+  margin-top: 24px;
+  text-align: center;
 }
 
 /* Adaptación para celulares */
@@ -259,6 +377,25 @@ button:disabled {
   text-align: right;
   margin-top: 5px;
   color: #666;
+}
+
+.form-error,
+.submission-error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.form-error {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+}
+
+.submission-error {
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  text-align: center;
 }
 
 .form-group input[type="file"] {
@@ -396,7 +533,8 @@ button:disabled {
 @media (max-width: 600px) {
 
   .details-section,
-  .preview-section {
+  .preview-section,
+  .category-section {
     padding: 18px;
   }
 
