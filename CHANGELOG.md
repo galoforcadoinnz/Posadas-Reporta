@@ -4,6 +4,28 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 
 ## [Unreleased]
 
+### Fase 2 — Envío público seguro (implementación local)
+
+#### Agregado
+
+- Edge Function con autenticación publicable explícita, CORS por entorno,
+  lectura limitada del cuerpo y validación estricta.
+- Turnstile mediante Siteverify con acción, hostname e idempotency key.
+- RPC de mínimo privilegio que devuelve únicamente tracking, fecha y estado.
+- Idempotencia con huella canónica y control de concurrencia.
+- Rate limiting atómico con ventanas móviles de 15 minutos y 24 horas.
+- Limpieza programada de HMAC vencidos después de 48 horas.
+- Pantalla de confirmación y suites Deno, React, SQL y E2E locales.
+
+#### Seguridad
+
+- La IP no se almacena; solo se persiste un HMAC-SHA-256 estable.
+- `service_role` conserva cero privilegios directos de tabla.
+- La migración de corte elimina la vía pública directa sin habilitar SELECT.
+- Los límites geográficos permanecen nulos hasta convertir y revisar la fuente
+  municipal; staging queda bloqueado de forma segura.
+- No se desplegó la Edge Function ni se ejecutó SQL remoto.
+
 ### Fase 1B — Base de datos versionada
 
 #### Agregado

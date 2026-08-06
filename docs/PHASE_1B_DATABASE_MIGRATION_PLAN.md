@@ -1,6 +1,6 @@
 # Fase 1B — Base de datos versionada
 
-**Estado:** implementación validada en staging, pendiente de merge
+**Estado:** finalizada en `main`; base de Fase 2
 
 **Proyecto remoto protegido:** `xouoxuoueutukemaqjro`
 
@@ -231,3 +231,8 @@ registro. Los principales riesgos pendientes son:
 - reemplazar el fallback Posadas en Fase 2;
 - definir los permisos mínimos de la futura operación administrativa antes de
   conceder acceso de tabla o función a `service_role`.
+
+La operación de servidor posterior se documenta en
+`docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`. Fase 2 conserva tracking y
+triggers, concede solo `EXECUTE` a una RPC y retira el INSERT público directo en
+una migración de corte separada.

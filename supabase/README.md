@@ -82,8 +82,16 @@ truncar ni administrar estas tablas sin una migración posterior explícita. Fas
 2 deberá conceder únicamente los permisos que requiera la operación de servidor
 aprobada.
 
-La devolución limitada del tracking corresponde a Fase 2 mediante una RPC o
-Edge Function segura; no está implementada aquí.
+La devolución limitada del tracking se implementa localmente mediante las
+migraciones `20260806010100` y `20260806010200`, la función `submit-report` y la
+suite `phase_2_database.sql`; todavía no fue aplicada remotamente.
+
+La primera migración exige `pg_cron` disponible y falla antes de alterar objetos
+si no puede programar la limpieza. Los límites geográficos de Posadas quedan
+nulos hasta completar una conversión revisada desde cartografía oficial.
+
+La segunda migración revoca el INSERT directo y elimina la política pública
+heredada. Debe mostrarse y aprobarse antes de ejecutarse.
 
 ## Pruebas
 
