@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Category } from '../types/category'
 import type { ReportLocation, Urgency } from '../types/report'
+import TurnstileWidget from './TurnstileWidget'
 
 type ReportPreviewProps = {
   location: ReportLocation
@@ -10,6 +11,9 @@ type ReportPreviewProps = {
   urgency: Urgency
   isSubmitting: boolean
   submissionError: string | null
+  turnstileToken: string | null
+  turnstileGeneration: number
+  onTurnstileTokenChange: (token: string | null) => void
   onBack: () => void
   onConfirm: () => void
 }
@@ -59,6 +63,9 @@ function ReportPreview({
   urgency,
   isSubmitting,
   submissionError,
+  turnstileToken,
+  turnstileGeneration,
+  onTurnstileTokenChange,
   onBack,
   onConfirm,
 }: ReportPreviewProps) {
@@ -192,6 +199,15 @@ function ReportPreview({
 
       </div>
 
+      <div className="anti-abuse-check">
+        <h3>Verificación antiabuso</h3>
+        <p>Completá la verificación para poder enviar el reporte.</p>
+        <TurnstileWidget
+          generation={turnstileGeneration}
+          onTokenChange={onTurnstileTokenChange}
+        />
+      </div>
+
       <div className="preview-footer">
 
         <button
@@ -207,7 +223,7 @@ function ReportPreview({
           type="button"
           className="confirm-button"
           onClick={onConfirm}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !turnstileToken}
         >
           {isSubmitting ? 'Enviando…' : '✅ Confirmar reporte'}
         </button>

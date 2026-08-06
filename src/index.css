@@ -387,6 +387,74 @@ button:disabled {
   border-radius: 8px;
 }
 
+.anti-abuse-check {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #d6e2dc;
+  border-radius: 0.75rem;
+  background: #f8fbf9;
+}
+
+.anti-abuse-check h3 {
+  margin-top: 0;
+}
+
+.turnstile-container {
+  min-height: 70px;
+}
+
+.success-section {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.success-card {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+  text-align: center;
+}
+
+.tracking-code {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: #eef7f1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: clamp(1rem, 4vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.copy-button {
+  margin-bottom: 0.75rem;
+}
+
+.receipt-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.receipt-details div {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: #f7f7f7;
+}
+
+.receipt-details dt {
+  font-weight: 700;
+}
+
+.receipt-details dd {
+  margin: 0.25rem 0 0;
+}
+
 .form-error {
   margin: 12px 0 0;
   padding: 10px 12px;

@@ -1,9 +1,11 @@
-import { createReport } from './services/reports'
 import { useState } from 'react'
 import MapView from './components/MapView'
 import ReportCategory from './components/ReportCategory'
 import ReportDetails from './components/ReportDetails'
 import ReportPreview from './components/ReportPreview'
+import ReportSuccess from './components/ReportSuccess'
+import { env } from './config/env'
+import { useReportSubmission } from './hooks/useReportSubmission'
 import type { Category } from './types/category'
 import type {
   ReportDetailsDraft,
@@ -26,20 +28,14 @@ function App() {
   const [reportDraft, setReportDraft] =
     useState<ReportDraft>(INITIAL_REPORT_DRAFT)
 
-  const [isSubmitting, setIsSubmitting] =
-    useState(false)
-
-  const [submissionError, setSubmissionError] =
-    useState<string | null>(null)
-
-  const [successMessage, setSuccessMessage] =
-    useState<string | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const submission = useReportSubmission()
 
   const handleLocationContinue = (
     latitude: number,
     longitude: number
   ) => {
-    setSuccessMessage(null)
+    submission.invalidateRequest()
 
     setReportDraft((currentDraft) => ({
       ...currentDraft,
@@ -52,6 +48,7 @@ function App() {
   const handleCategoryContinue = (
     category: Category
   ) => {
+    submission.invalidateRequest()
     setReportDraft((currentDraft) => ({
       ...currentDraft,
       category,
@@ -62,6 +59,7 @@ function App() {
   const handleDetailsChange = (
     changes: Partial<ReportDetailsDraft>
   ) => {
+    submission.invalidateRequest()
     setReportDraft((currentDraft) => ({
       ...currentDraft,
       ...changes,
@@ -90,36 +88,36 @@ function App() {
       !reportDraft.category ||
       !reportDraft.description.trim()
     ) {
-      setSubmissionError('Faltan datos obligatorios del reporte.')
       return
     }
 
-    if (isSubmitting) {
+    if (!turnstileToken) {
       return
     }
 
-    setIsSubmitting(true)
-    setSubmissionError(null)
+    const receipt = await submission.submit({
+      turnstileToken,
+      citySlug: env.citySlug,
+      categoryId: reportDraft.category.id,
+      subcategoryId: null,
+      description: reportDraft.description.trim(),
+      latitude: reportDraft.location.latitude,
+      longitude: reportDraft.location.longitude,
+      address: null,
+      urgency: reportDraft.urgency,
+    })
 
-    try {
-      await createReport({
-        categoryId: reportDraft.category.id,
-        subcategoryId: null,
-        description: reportDraft.description.trim(),
-        latitude: reportDraft.location.latitude,
-        longitude: reportDraft.location.longitude,
-        address: null,
-        urgency: reportDraft.urgency,
-      })
-
-      setReportDraft(INITIAL_REPORT_DRAFT)
-      setReportStep('map')
-      setSuccessMessage('Reporte creado correctamente.')
-    } catch {
-      setSubmissionError('No se pudo guardar el reporte. Intentá nuevamente.')
-    } finally {
-      setIsSubmitting(false)
+    setTurnstileToken(null)
+    if (receipt) {
+      setReportStep('success')
     }
+  }
+
+  const handleCreateAnotherReport = () => {
+    submission.reset()
+    setTurnstileToken(null)
+    setReportDraft(INITIAL_REPORT_DRAFT)
+    setReportStep('map')
   }
 
   return (
@@ -131,12 +129,6 @@ function App() {
           Informá los problemas de tu ciudad
         </p>
       </header>
-
-      {successMessage && (
-        <p className="app-feedback success" role="status">
-          {successMessage}
-        </p>
-      )}
 
       {reportStep === 'map' && (
         <main>
@@ -152,6 +144,7 @@ function App() {
           </section>
 
           <MapView
+            citySlug={env.citySlug}
             initialLocation={reportDraft.location}
             onContinue={handleLocationContinue}
           />
@@ -194,13 +187,25 @@ function App() {
               description={reportDraft.description}
               photo={reportDraft.photo}
               urgency={reportDraft.urgency}
-              isSubmitting={isSubmitting}
-              submissionError={submissionError}
+              isSubmitting={submission.isSubmitting}
+              submissionError={submission.submissionError}
+              turnstileToken={turnstileToken}
+              turnstileGeneration={submission.turnstileGeneration}
+              onTurnstileTokenChange={setTurnstileToken}
               onBack={handleBackToDetails}
               onConfirm={handleConfirmReport}
             />
           </main>
         )}
+
+      {reportStep === 'success' && submission.receipt && (
+        <main>
+          <ReportSuccess
+            receipt={submission.receipt}
+            onCreateAnother={handleCreateAnotherReport}
+          />
+        </main>
+      )}
     </div>
   )
 }

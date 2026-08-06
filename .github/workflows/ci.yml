@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - feature/phase-1b-versioned-database
+      - 'feature/**'
 
 permissions:
   contents: read
@@ -35,3 +35,20 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Edge Function checks
+        run: deno task --config supabase/deno.json check
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e

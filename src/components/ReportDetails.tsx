@@ -40,9 +40,9 @@ function ReportDetails({
 
   const handleContinue = () => {
 
-    if (!details.description.trim()) {
+    if (details.description.trim().length < 10) {
 
-      setValidationError('Por favor, describí brevemente el problema.')
+      setValidationError('La descripción debe tener al menos 10 caracteres.')
 
       return
 
@@ -135,6 +135,7 @@ function ReportDetails({
           }}
           placeholder="Por ejemplo: Hay un bache grande que ocupa casi todo el carril..."
           rows={5}
+          minLength={10}
           maxLength={1000}
         />
 

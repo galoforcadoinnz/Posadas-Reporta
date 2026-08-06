@@ -18,4 +18,12 @@ export const env = {
     'VITE_SUPABASE_PUBLISHABLE_KEY',
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
   ),
+  citySlug: requireEnvironmentVariable(
+    'VITE_CITY_SLUG',
+    import.meta.env.VITE_CITY_SLUG
+  ),
+  turnstileSiteKey: requireEnvironmentVariable(
+    'VITE_TURNSTILE_SITE_KEY',
+    import.meta.env.VITE_TURNSTILE_SITE_KEY
+  ),
 }
