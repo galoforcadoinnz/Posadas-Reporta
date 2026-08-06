@@ -4,6 +4,31 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 
 ## [Unreleased]
 
+### Fase 1B — Base de datos versionada
+
+#### Agregado
+
+- Baseline protegida para reconstruir exclusivamente bases vacías.
+- Migraciones aditivas para ciudades, tracking, estados separados e historial.
+- Backfill que conserva los reportes existentes y sus columnas heredadas.
+- Integridad de coordenadas y de la relación categoría–subcategoría.
+- Generación PostgreSQL de tracking con 80 bits, reintentos y unicidad.
+- Triggers separados para valores iniciales, tracking y `updated_at`.
+- Hardening local de grants y políticas RLS, con `INSERT` público limitado a
+  las ocho columnas consumidas por el frontend, `service_role` sin privilegios
+  directos de tabla y reversión documentada.
+- Seed idempotente que preserva el catálogo inventariado.
+- Pruebas SQL transaccionales para entornos locales o staging descartable.
+- Documentación de rutas separadas para baseline y upgrade.
+
+#### Seguridad
+
+- No se agregó lectura pública de `reports` ni consulta pública por tracking.
+- Las funciones auxiliares no son invocables directamente por roles públicos.
+- No se modificaron Supabase remoto, `.env.local`, autenticación ni frontend.
+- Baseline, migraciones, seed y pruebas se validaron únicamente en un entorno
+  Supabase local descartable; no se inició la Fase 2.
+
 ### Estabilización del MVP 0.2
 
 #### Agregado

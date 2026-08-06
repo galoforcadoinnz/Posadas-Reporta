@@ -450,3 +450,35 @@ Toda nueva funcionalidad deberá ser:
 # Objetivo Final
 
 Construir la mejor plataforma de participación ciudadana de Argentina utilizando tecnologías abiertas, modernas y escalables, con una arquitectura preparada para evolucionar hacia una solución multi-ciudad y multiplataforma.
+
+---
+
+# 20. Decisiones de datos — Fase 1B
+
+La base de datos se versiona mediante una baseline local separada y migraciones
+de upgrade aditivas. La baseline se utiliza exclusivamente para bases vacías y
+nunca debe aplicarse al proyecto remoto existente.
+
+El modelo mínimo incorpora `cities`, `reports.city_id` y
+`report_status_history`. `categories` y `subcategories` permanecen como
+catálogos globales; la configuración por ciudad se resolverá posteriormente
+sin duplicar categorías.
+
+Moderación (`moderation_status`) y seguimiento operativo (`workflow_status`)
+son dominios independientes. Las columnas heredadas `address` y `status` se
+conservan durante la transición.
+
+Los códigos de seguimiento son generados por PostgreSQL, no son secuenciales,
+no derivan del UUID del reporte y tienen una restricción de unicidad. No existe
+lectura pública de reportes ni consulta pública por tracking en Fase 1B.
+
+Los roles `anon` y `authenticated` aplican mínimo privilegio: lectura de
+catálogos activos e inserción validada limitada a las columnas públicas
+`category_id`, `subcategory_id`, `description`, `latitude`, `longitude`,
+`address`, `urgency` y `status`. No tienen privilegios de inserción sobre
+identificadores, tracking, ciudad, timestamps ni estados internos. El historial
+no tiene acceso público. `service_role` conserva su atributo `BYPASSRLS`, pero
+Fase 1B le revoca todos los privilegios directos sobre las cinco tablas; Fase 2
+deberá conceder solo los permisos concretos de la operación administrativa
+aprobada. La futura creación segura y devolución limitada del tracking
+corresponden a Fase 2 mediante RPC o Edge Function.

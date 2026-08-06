@@ -114,10 +114,14 @@ Este prototipo todavía no es apto para producción:
 - la creación directa de reportes no tiene CAPTCHA ni rate limiting;
 - no hay validación de servidor propia ni moderación;
 - las fotografías no se almacenan;
-- el esquema Supabase no está versionado en el repositorio;
-- no existe aislamiento multi-ciudad mediante `city_id`;
-- no hay código público de seguimiento;
-- no existen pruebas automatizadas;
+- la Fase 1B versiona y valida localmente el esquema, pero sus migraciones aún
+  no fueron aplicadas al proyecto remoto;
+- el modelo incorpora `city_id`, pero la inserción pública todavía fuerza
+  Posadas como compatibilidad temporal hasta la operación segura de Fase 2;
+- PostgreSQL genera el código público de seguimiento, pero el frontend todavía
+  no puede devolverlo ni mostrarlo;
+- existe una suite SQL transaccional para la base, pero todavía no hay pruebas
+  automatizadas de aplicación, integración ni E2E;
 - los iconos de marcador de Leaflet dependen actualmente de `unpkg`;
 - el tile server público de OpenStreetMap no debe tratarse como infraestructura productiva ilimitada.
 
@@ -136,3 +140,17 @@ npm run lint
 - `docs/ARCHITECTURE.md`: visión y arquitectura base.
 - `docs/AUDITORIA_TECNICA_POSADAS_REPORTA_MVP_0_2.md`: auditoría del MVP 0.2.
 - `CHANGELOG.md`: cambios relevantes del proyecto.
+
+## Base de datos versionada
+
+La Fase 1B incorpora localmente una baseline para bases vacías, migraciones
+aditivas, un seed verificable y pruebas SQL. La baseline está deliberadamente
+fuera de `supabase/migrations` y no debe aplicarse al proyecto remoto existente.
+
+Las instrucciones y las dos rutas separadas están en:
+
+- `docs/PHASE_1B_DATABASE_MIGRATION_PLAN.md`;
+- `supabase/README.md`.
+
+No se habilita lectura pública de reportes ni consulta por tracking. La futura
+RPC o Edge Function que inserte y devuelva datos limitados corresponde a Fase 2.

@@ -1,6 +1,6 @@
 # Fase 1A — Inventario reproducible y diseño de base de datos
 
-**Estado:** diseño local; no aplicado a Supabase  
+**Estado:** inventario completo y revisado; no aplicado a Supabase
 **Alcance:** inventario de solo lectura y definición arquitectónica previa a migraciones
 
 ## Objetivo
@@ -173,3 +173,13 @@ Los reportes nunca deben listarse individualmente. El inventario no selecciona d
 - aplicar SQL remoto;
 - utilizar claves administrativas en el frontend;
 - publicar en producción.
+
+## Cierre de Fase 1A
+
+El inventario confirmó PostgreSQL 17.6, ocho categorías, cero subcategorías y
+un reporte sin inconsistencias referenciales ni geográficas. También confirmó
+RLS activa, ausencia de triggers y grants públicos excesivos.
+
+La implementación local posterior se documenta en
+`docs/PHASE_1B_DATABASE_MIGRATION_PLAN.md`. Los resultados privados del
+inventario y los CSV originales permanecen fuera del repositorio.
