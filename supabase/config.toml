@@ -1,0 +1,6 @@
+project_id = "posadas-reporta-local"
+
+[functions.submit-report]
+# Las claves publicables modernas no son JWT. La función valida explícitamente
+# el header apikey y además exige Turnstile; CORS no se usa como autenticación.
+verify_jwt = false
