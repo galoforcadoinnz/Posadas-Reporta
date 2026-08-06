@@ -1,10 +1,25 @@
 # Fase 1B — Base de datos versionada
 
-**Estado:** implementación exclusivamente local, pendiente de revisión
+**Estado:** implementación validada en staging, pendiente de merge
 
 **Proyecto remoto protegido:** `xouoxuoueutukemaqjro`
 
 **Aplicación remota:** no autorizada
+
+## Validación de staging
+
+La validación completa se realizó el 5 de agosto de 2026 exclusivamente en el
+staging autorizado `ftpnmjshhzowbmdgbpkr`, utilizando el commit SQL
+`fd0fe336601265cb2538ac04b757a6bde6c1f2f7`. La baseline, las siete
+migraciones, el seed y la suite SQL fueron aprobados.
+
+La producción protegida `xouoxuoueutukemaqjro` no fue accedida ni modificada.
+La Fase 2, con validación de servidor, rate limiting y controles antiabuso,
+continúa siendo obligatoria antes de cualquier aplicación en producción.
+
+El prototipo ejecutable heredado `posadas_reporta.html` fue retirado del árbol
+actual. Continúa disponible únicamente en el historial Git y no forma parte de
+la aplicación Vite ni del despliegue actual.
 
 ## Objetivo
 

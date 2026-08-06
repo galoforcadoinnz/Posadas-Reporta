@@ -1,7 +1,9 @@
 # Auditoría técnica — Posadas Reporta MVP 0.2
 
-**Fecha:** 4 de agosto de 2026  
-**Alcance:** revisión estática del ZIP `posadas-reporta-auditoria.zip`  
+**Fecha:** 4 de agosto de 2026
+
+**Alcance:** revisión estática del ZIP `posadas-reporta-auditoria.zip`
+
 **Estado general:** prototipo funcional temprano, con una base válida, pero todavía no apto para producción.
 
 ## Resumen ejecutivo
@@ -252,4 +254,3 @@ Antes de publicar:
 El proyecto tiene una base válida para un MVP y no necesita ser descartado ni reescrito desde cero. Sí necesita una refactorización corta y controlada antes de agregar subcategorías, fotos, mapa público o panel administrativo.
 
 La prioridad no es “más funcionalidades”, sino asegurar cuatro fundamentos: **borrador consistente, modelo multi-ciudad, esquema versionado y creación segura de reportes**.
-

@@ -20,14 +20,25 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 - Seed idempotente que preserva el catálogo inventariado.
 - Pruebas SQL transaccionales para entornos locales o staging descartable.
 - Documentación de rutas separadas para baseline y upgrade.
+- Validación completa realizada el 5 de agosto de 2026 en el staging autorizado
+  `ftpnmjshhzowbmdgbpkr`, sobre el commit SQL
+  `fd0fe336601265cb2538ac04b757a6bde6c1f2f7`: baseline, siete migraciones,
+  seed y suite SQL aprobados.
 
 #### Seguridad
 
 - No se agregó lectura pública de `reports` ni consulta pública por tracking.
 - Las funciones auxiliares no son invocables directamente por roles públicos.
-- No se modificaron Supabase remoto, `.env.local`, autenticación ni frontend.
-- Baseline, migraciones, seed y pruebas se validaron únicamente en un entorno
-  Supabase local descartable; no se inició la Fase 2.
+- No se modificaron `.env.local`, autenticación ni frontend.
+- La producción protegida `xouoxuoueutukemaqjro` no fue accedida ni modificada.
+- La Fase 2 con validación de servidor y controles antiabuso continúa siendo
+  obligatoria antes de cualquier aplicación en producción.
+
+#### Cambiado
+
+- El prototipo ejecutable heredado `posadas_reporta.html` se eliminó del árbol
+  actual. Su contenido continúa disponible únicamente en el historial Git y no
+  forma parte de la aplicación Vite ni del despliegue actual.
 
 ### Estabilización del MVP 0.2
 
