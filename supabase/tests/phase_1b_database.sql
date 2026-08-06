@@ -417,15 +417,11 @@ BEGIN
     RAISE EXCEPTION 'Privileged tracking code was overwritten';
   END IF;
 
-  SELECT public.reports.updated_at
-  INTO old_updated_at
-  FROM public.reports
-  WHERE public.reports.id = report_id;
-
-  PERFORM pg_catalog.pg_sleep(0.01);
+  old_updated_at := '2000-01-01 00:00:00+00'::timestamp with time zone;
 
   UPDATE public.reports
-  SET description = 'phase-1b-updated-at-test'::text
+  SET description = 'phase-1b-updated-at-test'::text,
+      updated_at = old_updated_at
   WHERE public.reports.id = report_id;
 
   SELECT public.reports.updated_at
