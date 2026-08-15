@@ -111,16 +111,19 @@ no actualiza exactamente la fila activa y estable de Posadas.
 2. `20260815054156_create_secure_report_submission.sql`: RPC, idempotencia,
    rate limiting, limpieza y límites configurables. Conserva temporalmente el
    INSERT heredado para probar la función.
-3. `20260815054157_disable_direct_report_inserts.sql`: revoca el INSERT de
-   `anon` y `authenticated`, elimina exclusivamente la política heredada y
-   retira el fallback fijo de Posadas.
-4. `20260815184117_configure_posadas_reporting_bounds.sql`: registra la
+3. `20260815184117_configure_posadas_reporting_bounds.sql`: registra la
    envolvente oficial revisada y habilita el flujo geográfico.
+4. `20260815190312_20260815185725_restrict_rls_auto_enable_execute.sql`:
+   restringe la ejecución directa del helper administrado de RLS.
+5. `20260815193128_20260815054157_disable_direct_report_inserts.sql`: revoca
+   el INSERT de `anon` y `authenticated` y elimina exclusivamente la política
+   heredada. El doble timestamp reproduce la versión y el nombre registrados
+   por el conector en staging.
 
-La migración `20260815054157` contiene `DROP POLICY`. No elimina filas ni columnas. La
-alternativa es una política dormida detrás de grants revocados, pero deja una
-capacidad latente. Antes de aplicarla se requiere backup del esquema, inventario
-de grants/políticas y aprobación explícita del SQL completo.
+La migración de corte contiene `DROP POLICY`. No elimina filas ni columnas. La
+alternativa era una política dormida detrás de grants revocados, pero dejaba una
+capacidad latente. Antes de aplicarla se verificaron el inventario de
+grants/políticas y la aprobación explícita del SQL completo.
 
 Si el corte falla, los envíos permanecen bloqueados y se corrige hacia adelante;
 no se restauran automáticamente los grants públicos.
@@ -182,10 +185,10 @@ No se incluyen valores reales en el repositorio ni en comandos documentados.
 7. Completado: canary real Turnstile → Edge Function → RPC, con una fila y un evento de cuota.
 8. Completado: hardening progresivo de `rls_auto_enable()` aplicado y validado
    exclusivamente en staging; advisor 0028/0029 resuelto.
-9. Pendiente: mostrar y aprobar la migración de corte.
-10. Pendiente: aplicar el corte exclusivamente en staging.
-11. Pendiente: repetir SQL, E2E y pruebas manuales posteriores al corte.
-12. Pendiente: confirmar que no existe tráfico directo a `reports`.
+9. Completado: migración de corte mostrada y aprobada explícitamente.
+10. Completado: corte aplicado exclusivamente en staging.
+11. Completado: postcondiciones SQL y canary Turnstile posteriores al corte.
+12. Completado: inserción directa rechazada para `anon` y `authenticated`.
 
 Producción requiere otro plan, backup, ventana y aprobación.
 
@@ -202,12 +205,12 @@ El inventario remoto de solo lectura del 15 de agosto de 2026 confirmó que:
 - la migración de cutover revoca exactamente esa vía directa y elimina la
   política heredada.
 
-El ledger local quedó alineado con staging: la versión remota del hardening es
-`20260815190312` y su nombre registrado es
-`20260815185725_restrict_rls_auto_enable_execute`. El único timestamp local
-ausente en staging es `20260815054157`, correspondiente deliberadamente al
-cutover todavía no autorizado. Supabase compara los timestamps para determinar
-qué migraciones faltan.
+El ledger local quedó alineado con staging. La versión remota del hardening es
+`20260815190312` y la del cutover es `20260815193128`; sus nombres registrados
+son `20260815185725_restrict_rls_auto_enable_execute` y
+`20260815054157_disable_direct_report_inserts`, respectivamente. Los archivos
+locales reproducen esas parejas de versión y nombre porque Supabase compara los
+timestamps para determinar qué migraciones faltan.
 
 El asesor de seguridad de Supabase detectó además que la función de soporte
 `public.rls_auto_enable()` es `SECURITY DEFINER` y conserva el ACL implícito de
