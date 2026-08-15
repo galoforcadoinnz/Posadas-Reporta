@@ -482,3 +482,18 @@ Fase 1B le revoca todos los privilegios directos sobre las cinco tablas; Fase 2
 deberá conceder solo los permisos concretos de la operación administrativa
 aprobada. La futura creación segura y devolución limitada del tracking
 corresponden a Fase 2 mediante RPC o Edge Function.
+
+# 21. Decisiones de seguridad — Fase 2
+
+La creación pública se implementa mediante la Edge Function `submit-report` y
+la RPC interna `public.submit_report_v1`. El navegador no inserta directamente
+en `reports`. Turnstile, validación estricta, HMAC de IP, ventanas móviles,
+idempotencia y límites geográficos preceden a la inserción.
+
+La RPC es la única capacidad concedida a `service_role`; ese rol continúa sin
+privilegios directos sobre tablas. La respuesta contiene exclusivamente
+tracking, fecha y estado `received`. No existe lectura pública de reportes.
+
+Los límites se configuran por ciudad. Posadas queda pendiente hasta convertir y
+revisar una fuente cartográfica oficial; staging permanece bloqueado mientras
+los cuatro valores sean nulos.

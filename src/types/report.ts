@@ -7,7 +7,18 @@ export type ReportLocation = {
   longitude: number
 }
 
-export type ReportStep = 'map' | 'category' | 'details' | 'preview'
+export type ReportStep =
+  | 'map'
+  | 'category'
+  | 'details'
+  | 'preview'
+  | 'success'
+
+export type ReportReceipt = {
+  trackingCode: string
+  createdAt: string
+  status: 'received'
+}
 
 export type ReportDetailsDraft = {
   description: string

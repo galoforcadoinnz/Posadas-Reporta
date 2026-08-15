@@ -16,6 +16,8 @@ El MVP permite:
 - revisar el borrador antes de confirmarlo;
 - conservar los datos al avanzar y volver entre pasos;
 - crear un reporte mediante el servicio Supabase existente.
+- preparar el envío seguro y mostrar su código de seguimiento cuando la Fase 2
+  sea aplicada en un entorno autorizado.
 
 La fotografía seleccionada no se sube ni se guarda. La interfaz lo informa antes de confirmar.
 
@@ -42,6 +44,8 @@ La aplicación requiere estas variables frontend:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_CITY_SLUG`
+- `VITE_TURNSTILE_SITE_KEY`
 
 Deben configurarse en `.env.local`. Ese archivo está ignorado por Git y sus valores no deben mostrarse, registrarse, copiarse a documentación ni incluirse en commits.
 
@@ -67,6 +71,18 @@ Ejecutar ESLint:
 npm run lint
 ```
 
+Ejecutar las pruebas locales:
+
+```bash
+npm run test:unit
+npm run test:e2e
+deno task --config supabase/deno.json check
+bash supabase/tests/run_local_database_tests.sh
+```
+
+La última orden requiere Docker y Deno, y usa una instancia PostgreSQL efímera;
+no monta el repositorio ni se conecta a una base remota.
+
 Previsualizar el build local:
 
 ```bash
@@ -79,7 +95,8 @@ npm run preview
 2. Selección de una categoría obtenida desde Supabase.
 3. Carga de descripción, urgencia y fotografía local opcional.
 4. Previsualización del borrador.
-5. Confirmación mediante el servicio de reportes.
+5. Verificación Turnstile y envío mediante la Edge Function `submit-report`.
+6. Confirmación limitada con tracking, fecha y estado inicial.
 
 `ReportDraft`, definido en `src/types/report.ts`, es la fuente única del reporte en curso. Los valores internos de urgencia son `low`, `medium` y `high`.
 
@@ -111,17 +128,18 @@ No se debe:
 
 Este prototipo todavía no es apto para producción:
 
-- la creación directa de reportes no tiene CAPTCHA ni rate limiting;
-- no hay validación de servidor propia ni moderación;
+- la implementación local de Fase 2 incorpora CAPTCHA y rate limiting, pero no
+  está aplicada en ningún entorno remoto;
+- existe validación propia en la Edge Function y PostgreSQL, pero todavía no hay
+  moderación operativa;
 - las fotografías no se almacenan;
 - la Fase 1B versiona y valida localmente el esquema, pero sus migraciones aún
   no fueron aplicadas al proyecto remoto;
-- el modelo incorpora `city_id`, pero la inserción pública todavía fuerza
-  Posadas como compatibilidad temporal hasta la operación segura de Fase 2;
-- PostgreSQL genera el código público de seguimiento, pero el frontend todavía
-  no puede devolverlo ni mostrarlo;
-- existe una suite SQL transaccional para la base, pero todavía no hay pruebas
-  automatizadas de aplicación, integración ni E2E;
+- los límites geográficos oficiales de Posadas continúan pendientes y bloquean
+  correctamente el envío hasta ser configurados;
+- CI ejecuta pruebas SQL transaccionales en PostgreSQL efímero, Deno, React,
+  una integración handler Edge→RPC y un E2E interceptado; todavía falta cubrir
+  localmente la capa real de gateway/PostgREST;
 - los iconos de marcador de Leaflet dependen actualmente de `unpkg`;
 - el tile server público de OpenStreetMap no debe tratarse como infraestructura productiva ilimitada.
 
@@ -152,5 +170,12 @@ Las instrucciones y las dos rutas separadas están en:
 - `docs/PHASE_1B_DATABASE_MIGRATION_PLAN.md`;
 - `supabase/README.md`.
 
-No se habilita lectura pública de reportes ni consulta por tracking. La futura
-RPC o Edge Function que inserte y devuelva datos limitados corresponde a Fase 2.
+No se habilita lectura pública de reportes ni consulta por tracking. La
+implementación local está documentada en
+`docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`; no fue desplegada ni aplicada.
+
+La protección antiabuso envía la IP de origen a Cloudflare Turnstile para
+verificar el desafío. Posadas Reporta no persiste la IP sin procesar: almacena
+durante un máximo operativo de 48 horas un HMAC no reversible para aplicar las
+ventanas de rate limiting. Esta finalidad y el proveedor deberán incorporarse a
+la política de privacidad antes de habilitar el servicio públicamente.

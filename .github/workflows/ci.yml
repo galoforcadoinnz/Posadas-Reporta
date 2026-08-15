@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - main
-      - feature/phase-1b-versioned-database
+      - 'feature/**'
 
 permissions:
   contents: read
@@ -35,3 +35,36 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.5
+
+      - name: Edge Function checks
+        run: deno task --config supabase/deno.json check
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+  database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.9.5
+
+      - name: Database migrations, regressions and concurrency
+        run: bash supabase/tests/run_local_database_tests.sh

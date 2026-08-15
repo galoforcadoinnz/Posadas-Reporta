@@ -7,7 +7,9 @@ import {
 } from 'react-leaflet'
 
 import L from 'leaflet'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getActiveCity } from '../services/cities'
+import type { CityReportingBounds } from '../types/city'
 import type { ReportLocation } from '../types/report'
 
 import 'leaflet/dist/leaflet.css'
@@ -37,6 +39,7 @@ const POSADAS_CENTER: [number, number] = [
 ]
 
 type MapViewProps = {
+  citySlug: string
   initialLocation: ReportLocation | null
   onContinue: (
     latitude: number,
@@ -71,6 +74,7 @@ function MapClickHandler({
 }
 
 function MapView({
+  citySlug,
   initialLocation,
   onContinue,
 }: MapViewProps) {
@@ -86,9 +90,55 @@ function MapView({
 
   const [isLocating, setIsLocating] = useState(false)
   const [locationError, setLocationError] = useState<string | null>(null)
+  const [reportingBounds, setReportingBounds] =
+    useState<CityReportingBounds | null>(null)
+  const [isLoadingCity, setIsLoadingCity] = useState(true)
+
+  useEffect(() => {
+    let active = true
+
+    getActiveCity(citySlug)
+      .then((city) => {
+        if (!active) return
+        if (!city.reportingBounds) {
+          setLocationError(
+            'Los reportes no están habilitados temporalmente para esta ciudad.'
+          )
+          return
+        }
+        setReportingBounds(city.reportingBounds)
+      })
+      .catch(() => {
+        if (active) {
+          setLocationError('No se pudo cargar la configuración de la ciudad.')
+        }
+      })
+      .finally(() => {
+        if (active) setIsLoadingCity(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [citySlug])
+
+  const isInsideReportingBounds = (
+    latitude: number,
+    longitude: number
+  ) =>
+    reportingBounds !== null &&
+    latitude >= reportingBounds.minLatitude &&
+    latitude <= reportingBounds.maxLatitude &&
+    longitude >= reportingBounds.minLongitude &&
+    longitude <= reportingBounds.maxLongitude
 
   // Obtener ubicación mediante GPS
   const getCurrentLocation = () => {
+
+    if (!reportingBounds) {
+      setLocationError('Los reportes no están habilitados temporalmente.')
+      return
+    }
 
     if (!navigator.geolocation) {
       setLocationError('Tu navegador no permite obtener la ubicación.')
@@ -108,10 +158,13 @@ function MapView({
         const longitude =
           position.coords.longitude
 
-        setSelectedLocation([
-          latitude,
-          longitude,
-        ])
+        if (!isInsideReportingBounds(latitude, longitude)) {
+          setLocationError('Tu ubicación está fuera del área habilitada.')
+          setIsLocating(false)
+          return
+        }
+
+        setSelectedLocation([latitude, longitude])
 
         setIsLocating(false)
 
@@ -136,6 +189,11 @@ function MapView({
     longitude: number
   ) => {
 
+    if (!isInsideReportingBounds(latitude, longitude)) {
+      setLocationError('La ubicación está fuera del área habilitada.')
+      return
+    }
+
     setSelectedLocation([
       latitude,
       longitude,
@@ -157,6 +215,11 @@ function MapView({
 
     }
 
+    if (!isInsideReportingBounds(selectedLocation[0], selectedLocation[1])) {
+      setLocationError('La ubicación está fuera del área habilitada.')
+      return
+    }
+
     onContinue(
       selectedLocation[0],
       selectedLocation[1]
@@ -174,9 +237,13 @@ function MapView({
           type="button"
           className="location-button"
           onClick={getCurrentLocation}
-          disabled={isLocating}
+          disabled={isLocating || isLoadingCity || !reportingBounds}
         >
-          {isLocating ? 'Buscando ubicación…' : '📍 Usar mi ubicación'}
+          {isLoadingCity
+            ? 'Cargando ciudad…'
+            : isLocating
+            ? 'Buscando ubicación…'
+            : '📍 Usar mi ubicación'}
         </button>
 
         {locationError && (
@@ -244,7 +311,7 @@ function MapView({
 
       </MapContainer>
 
-      {selectedLocation && (
+      {selectedLocation && reportingBounds && (
 
         <div className="selected-location">
 
