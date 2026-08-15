@@ -128,15 +128,15 @@ No se debe:
 
 Este prototipo todavía no es apto para producción:
 
-- la implementación local de Fase 2 incorpora CAPTCHA y rate limiting, pero no
-  está aplicada en ningún entorno remoto;
+- la Fase 2 y el hardening de la función administrada de RLS están validados en
+  un staging dedicado con Cloudflare Turnstile y rate limiting, pero el cutover
+  RLS todavía no fue aplicado;
 - existe validación propia en la Edge Function y PostgreSQL, pero todavía no hay
   moderación operativa;
 - las fotografías no se almacenan;
-- la Fase 1B versiona y valida localmente el esquema, pero sus migraciones aún
-  no fueron aplicadas al proyecto remoto;
-- los límites geográficos oficiales de Posadas continúan pendientes y bloquean
-  correctamente el envío hasta ser configurados;
+- la Fase 1B y la migración RPC están aplicadas únicamente al staging dedicado;
+- los límites de Posadas usan la envolvente WGS84 oficial del municipio; el
+  modelo rectangular puede incluir pequeñas áreas exteriores al multipolígono;
 - CI ejecuta pruebas SQL transaccionales en PostgreSQL efímero, Deno, React,
   una integración handler Edge→RPC y un E2E interceptado; todavía falta cubrir
   localmente la capa real de gateway/PostgREST;
@@ -172,7 +172,8 @@ Las instrucciones y las dos rutas separadas están en:
 
 No se habilita lectura pública de reportes ni consulta por tracking. La
 implementación local está documentada en
-`docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`; no fue desplegada ni aplicada.
+`docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`. El frontend y la Edge Function
+están desplegados únicamente en staging; producción permanece sin cambios.
 
 La protección antiabuso envía la IP de origen a Cloudflare Turnstile para
 verificar el desafío. Posadas Reporta no persiste la IP sin procesar: almacena

@@ -67,6 +67,11 @@ run_sql_file supabase/tests/phase_1b_database.sql
 run_sql_file supabase/migrations/20260815053645_enable_pg_cron.sql
 run_sql_file supabase/migrations/20260815054156_create_secure_report_submission.sql
 run_sql_file supabase/migrations/20260815054157_disable_direct_report_inserts.sql
+run_sql_file supabase/migrations/20260815184117_configure_posadas_reporting_bounds.sql
+# Supabase Hosted provee rls_auto_enable(), pero la imagen PostgreSQL local no.
+# Esta fixture reproduce sólo sus metadatos para validar el hardening fail-closed.
+run_sql_file supabase/tests/fixtures/platform_rls_auto_enable.sql
+run_sql_file supabase/migrations/20260815190312_20260815185725_restrict_rls_auto_enable_execute.sql
 
 run_sql_file supabase/tests/phase_2_database.sql
 
