@@ -1,7 +1,7 @@
 # Fase 2 — Envío público seguro de reportes
 
-**Estado:** migración aditiva y Edge Function v2 validadas en staging; corte
-RLS, límites geográficos y frontend de staging pendientes
+**Estado:** frontend, Turnstile, límites y Edge Function v3 validados en
+staging; corte RLS pendiente
 
 **Producción protegida:** `xouoxuoueutukemaqjro`
 
@@ -44,7 +44,8 @@ Cada invocación reinicia el widget. Las pruebas unitarias usan las claves
 oficiales de prueba; ninguna clave real se versiona. En el runtime hospedado,
 esas claves dummy devuelven `action = null` y `hostname = example.com`, por lo
 que no pueden completar un canary que exige acción y hostname reales. Staging
-debe usar un widget propio restringido a su hostname definitivo.
+usa un widget propio restringido a `posadas-reporta-staging.pages.dev`; sus
+claves permanecen fuera del repositorio.
 
 ## IP y rate limiting
 
@@ -83,23 +84,25 @@ El lookup por `submission_id` y la comparación de huella ocurren antes de
 consultar configuración mutable. Un reporte confirmado conserva el mismo
 comprobante aunque luego se desactive su ciudad o categoría o cambien límites.
 
-## Geografía y bloqueo de staging
+## Geografía de staging
 
-Fuente oficial consultada el 6 de agosto de 2026:
+La migración `20260815184117_configure_posadas_reporting_bounds.sql` usa el
+GeoJSON oficial de municipios publicado por Datos Argentina y provisto por el
+Instituto Geográfico Nacional:
 
-- Mapoteca de la Secretaría de Planificación Estratégica y Territorial de la
-  Municipalidad de Posadas:
-  `https://posadas.gov.ar/planurbano/mapoteca/`.
+- recurso: `https://infra.datos.gob.ar/georef/municipios.geojson`;
+- entidad: Municipio Posadas, id `540119`, geometría `MultiPolygon`;
+- SHA-256 consultado el 15 de agosto de 2026:
+  `60efa80ef95a0c1c7429fdc15b6408c6a29846300e0c3833c96aa25810ab6d40`;
+- envolvente WGS84: latitud `-27.5822986159999` a
+  `-27.3242615789999`; longitud `-56.0585472499999` a
+  `-55.8426106539999`.
 
-La fuente publica mapas base, subdivisiones y archivos editables, pero no se
-encontró un rectángulo georreferenciado verificable que pueda copiarse sin
-interpretación cartográfica. Los cuatro límites quedan en `NULL` y la RPC
-responde `CITY_REPORTING_BOUNDS_UNAVAILABLE`.
-
-Este es un bloqueo deliberado para staging. Antes de habilitar envíos se
-debe obtener el archivo municipal georreferenciado, documentar su sistema de
-referencia, convertirlo a WGS84/EPSG:4326, calcular su envolvente y revisar los
-cuatro extremos. No se aceptan coordenadas aproximadas.
+El esquema actual valida una envolvente rectangular, no el multipolígono. Esto
+puede admitir pequeñas áreas exteriores al municipio y debe considerarse una
+limitación explícita hasta incorporar validación poligonal, por ejemplo con
+PostGIS. El cambio exige que los cuatro campos previos sean `NULL` y aborta si
+no actualiza exactamente la fila activa y estable de Posadas.
 
 ## Migraciones y corte
 
@@ -111,8 +114,10 @@ cuatro extremos. No se aceptan coordenadas aproximadas.
 3. `20260815054157_disable_direct_report_inserts.sql`: revoca el INSERT de
    `anon` y `authenticated`, elimina exclusivamente la política heredada y
    retira el fallback fijo de Posadas.
+4. `20260815184117_configure_posadas_reporting_bounds.sql`: registra la
+   envolvente oficial revisada y habilita el flujo geográfico.
 
-La tercera migración contiene `DROP POLICY`. No elimina filas ni columnas. La
+La migración `20260815054157` contiene `DROP POLICY`. No elimina filas ni columnas. La
 alternativa es una política dormida detrás de grants revocados, pero deja una
 capacidad latente. Antes de aplicarla se requiere backup del esquema, inventario
 de grants/políticas y aprobación explícita del SQL completo.
@@ -170,14 +175,52 @@ No se incluyen valores reales en el repositorio ni en comandos documentados.
 
 1. Completado: staging dedicado, inventario y Fase 1B verificados.
 2. Completado: `pg_cron` y migración RPC aditiva aplicados.
-3. Completado: secretos de canary y `submit-report` v2 desplegados.
+3. Completado: secretos de canary y `submit-report` v3 desplegados.
 4. Completado: CORS, `apikey`, anti-spoofing, límite corporal y cierre sin datos.
-5. Pendiente: hostname aislado y widget Turnstile real de staging.
-6. Pendiente: cargar y revisar límites oficiales.
-7. Pendiente: probar Turnstile, RPC, idempotencia, cuota y respuesta extremos.
-8. Pendiente: mostrar y aprobar la migración de corte.
-9. Pendiente: aplicar el corte y desplegar el frontend.
-10. Pendiente: ejecutar SQL, E2E y pruebas manuales finales.
-11. Pendiente: confirmar que no existe tráfico directo a `reports`.
+5. Completado: Cloudflare Pages y widget Turnstile restringidos al hostname de staging.
+6. Completado: límites oficiales revisados y cargados mediante migración versionada.
+7. Completado: canary real Turnstile → Edge Function → RPC, con una fila y un evento de cuota.
+8. Completado: hardening progresivo de `rls_auto_enable()` aplicado y validado
+   exclusivamente en staging; advisor 0028/0029 resuelto.
+9. Pendiente: mostrar y aprobar la migración de corte.
+10. Pendiente: aplicar el corte exclusivamente en staging.
+11. Pendiente: repetir SQL, E2E y pruebas manuales posteriores al corte.
+12. Pendiente: confirmar que no existe tráfico directo a `reports`.
 
 Producción requiere otro plan, backup, ventana y aprobación.
+
+## Gate previo al cutover
+
+El inventario remoto de solo lectura del 15 de agosto de 2026 confirmó que:
+
+- la política heredada `Public can create pending reports` continúa presente;
+- `anon` y `authenticated` conservan `INSERT` por columnas sobre los ocho
+  campos heredados, aunque no tengan `INSERT` de tabla;
+- únicamente `service_role` puede ejecutar `submit_report_v1`;
+- el job `posadas-reporta-rate-limit-cleanup` está activo con la expresión
+  `23 * * * *` y conserva el comando de limpieza esperado;
+- la migración de cutover revoca exactamente esa vía directa y elimina la
+  política heredada.
+
+El ledger local quedó alineado con staging: la versión remota del hardening es
+`20260815190312` y su nombre registrado es
+`20260815185725_restrict_rls_auto_enable_execute`. El único timestamp local
+ausente en staging es `20260815054157`, correspondiente deliberadamente al
+cutover todavía no autorizado. Supabase compara los timestamps para determinar
+qué migraciones faltan.
+
+El asesor de seguridad de Supabase detectó además que la función de soporte
+`public.rls_auto_enable()` es `SECURITY DEFINER` y conserva el ACL implícito de
+`PUBLIC`, por lo que aparece ejecutable por `anon` y `authenticated`. La función
+es un event trigger de la plataforma, pero su exposición no es necesaria para
+clientes. La migración progresiva
+`20260815190312_20260815185725_restrict_rls_auto_enable_execute.sql` conserva
+la función y el event trigger, valida sus metadatos y revoca `EXECUTE` a
+`PUBLIC`, `anon`, `authenticated` y `service_role`. Fue aplicada y validada en
+staging antes del cutover. El nombre local reproduce exactamente la versión y
+el nombre guardados por el ledger remoto.
+
+Los avisos `RLS enabled, no policy` sobre la tabla privada de rate limiting y
+el historial de estados representan el diseño deny-by-default actual. Los dos
+foreign keys sin índice de cobertura se registran como mejora de rendimiento
+separada y no deben mezclarse con el corte de seguridad.

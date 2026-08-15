@@ -18,6 +18,10 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 - Pantalla de confirmación y suites Deno, React, SQL y E2E locales.
 - Integración local del handler Edge con la RPC PostgreSQL real mediante un
   contenedor efímero, sin montar el repositorio ni usar servicios remotos.
+- Envolvente WGS84 versionada para Posadas a partir del GeoJSON oficial de
+  municipios de Datos Argentina/IGN.
+- Staging gratuito en Cloudflare Pages y widget Turnstile restringido a su
+  hostname.
 
 #### Seguridad
 
@@ -31,11 +35,19 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
   configuración de ciudad o catálogo.
 - `service_role` conserva cero privilegios directos de tabla.
 - La migración de corte elimina la vía pública directa sin habilitar SELECT.
-- Los límites geográficos permanecen nulos hasta convertir y revisar la fuente
-  municipal; staging queda bloqueado de forma segura.
-- El prerrequisito `pg_cron`, la migración RPC aditiva y `submit-report` v2 se
-  validaron en el staging dedicado `ftpnmjshhzowbmdgbpkr`. No se aplicó el
-  corte de RLS ni se accedió a producción.
+- Los límites geográficos usan una envolvente rectangular oficial; se documenta
+  que puede incluir pequeñas áreas exteriores al multipolígono municipal.
+- El prerrequisito `pg_cron`, la migración RPC aditiva, los límites,
+  `submit-report` v3 y un canary real con Turnstile se validaron en el staging
+  dedicado `ftpnmjshhzowbmdgbpkr`. No se aplicó el corte RLS ni se accedió a
+  producción.
+- Se aplicó exclusivamente en staging una migración progresiva que conserva el
+  event trigger de RLS y revoca la ejecución directa de
+  `public.rls_auto_enable()` a roles cliente y `service_role`; el advisor
+  0028/0029 y un canary real quedaron validados.
+- El archivo local del hardening replica la versión y el nombre exactos del
+  ledger remoto; el único timestamp deliberadamente pendiente en staging es el
+  cutover RLS.
 
 ### Fase 1B — Base de datos versionada
 

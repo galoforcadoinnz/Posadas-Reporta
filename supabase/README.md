@@ -84,23 +84,40 @@ aprobada. La Fase 2 local concede únicamente `EXECUTE` sobre
 `submit_report_v1` y vuelve a revocar las funciones auxiliares de triggers.
 
 La devolución limitada del tracking se implementa mediante las
-migraciones `20260815053645`, `20260815054156` y `20260815054157`, la función
-`submit-report` y la suite `phase_2_database.sql`. Las dos primeras migraciones
-y `submit-report` v2 fueron aplicadas al staging dedicado; la migración de corte
-permanece sin aplicar.
+migraciones `20260815053645`, `20260815054156`, `20260815054157`,
+`20260815184117` y `20260815190312`, la función `submit-report` y la suite
+`phase_2_database.sql`. El prerrequisito, la RPC, los límites y
+`submit-report` v3 fueron aplicados al staging dedicado; la migración de corte
+permanece sin aplicar. El hardening de `rls_auto_enable()` fue aplicado y
+validado exclusivamente en staging.
 
 La migración `20260815053645` exige `pg_cron` disponible, lo instala en
 `pg_catalog` y valida su API antes de continuar. La siguiente migración falla
-antes de alterar objetos si no puede programar la limpieza. Los límites
-geográficos de Posadas quedan nulos hasta completar una conversión revisada
-desde cartografía oficial.
+antes de alterar objetos si no puede programar la limpieza. La migración
+`20260815184117` configura la envolvente WGS84 del municipio Posadas a partir
+del GeoJSON oficial de Datos Argentina/IGN y documenta la limitación del modelo
+rectangular.
+
+La migración
+`20260815190312_20260815185725_restrict_rls_auto_enable_execute.sql` conserva
+el event trigger de la plataforma y revoca únicamente la ejecución directa de
+`public.rls_auto_enable()` a `PUBLIC`, `anon`, `authenticated` y
+`service_role`. Verifica firma, propietario, `SECURITY DEFINER` y trigger activo
+antes y después del cambio. El doble timestamp reproduce exactamente la versión
+y el nombre registrados por el conector en el ledger de staging.
 
 Los eventos de rate limiting viven en el esquema exclusivo
 `posadas_reporta_private`; ningún rol público ni `service_role` tiene acceso
 directo. La limpieza dispone de un índice propio por `created_at`.
 
-La tercera migración revoca el INSERT directo y elimina la política pública
-heredada. Debe mostrarse y aprobarse antes de ejecutarse.
+La migración `20260815054157` revoca el INSERT directo y elimina la política
+pública heredada. Debe mostrarse y aprobarse antes de ejecutarse.
+
+El ledger local replica la versión `20260815190312` y el nombre
+`20260815185725_restrict_rls_auto_enable_execute` registrados en staging. El
+único timestamp local pendiente allí es `20260815054157`, el corte RLS. No se
+usa `migration repair`: el historial remoto conserva el registro real generado
+al aplicar el hardening.
 
 Las migraciones son de una sola ejecución y dependen del ledger de Supabase. Un
 fallo transaccional se corrige hacia adelante; no se reejecutan manualmente
@@ -112,6 +129,11 @@ Las pruebas SQL terminan con `ROLLBACK`. Contienen intentos negativos de
 `UPDATE`, `DELETE` y `TRUNCATE` ejecutados como rol público para demostrar que
 son rechazados y verifican que `service_role` no tenga privilegios directos.
 Nunca deben ejecutarse en producción.
+
+La imagen PostgreSQL local no incluye la función administrada
+`public.rls_auto_enable()` presente en Supabase Hosted. La suite carga una
+fixture mínima que reproduce exclusivamente su firma y metadatos de seguridad
+para probar la migración fail-closed; no replica su lógica de plataforma.
 
 La regresión local completa se ejecuta con:
 
