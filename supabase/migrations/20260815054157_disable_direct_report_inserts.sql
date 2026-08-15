@@ -1,6 +1,6 @@
 -- Objetivo: completar el corte de Fase 2 y hacer que todos los reportes
 -- públicos ingresen exclusivamente por la Edge Function y submit_report_v1.
--- Precondiciones: la migración 20260806010100 fue aplicada y la Edge Function
+-- Precondiciones: la migración 20260815054156 fue aplicada y la Edge Function
 -- fue validada en el entorno objetivo.
 -- Postcondiciones: anon y authenticated no pueden insertar directamente y la
 -- política pública heredada deja de existir. No se habilita lectura pública.

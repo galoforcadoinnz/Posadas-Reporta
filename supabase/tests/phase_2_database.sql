@@ -105,6 +105,17 @@ BEGIN
     RAISE EXCEPTION 'The rate-limit cleanup job is unavailable';
   END IF;
 
+  IF has_schema_privilege('anon', 'cron', 'USAGE')
+     OR has_schema_privilege('authenticated', 'cron', 'USAGE')
+     OR has_schema_privilege('service_role', 'cron', 'USAGE') THEN
+    RAISE EXCEPTION 'A public role can use the cron schema';
+  END IF;
+
+  IF NOT has_schema_privilege('postgres', 'cron', 'USAGE')
+     OR NOT has_table_privilege('postgres', 'cron.job', 'SELECT') THEN
+    RAISE EXCEPTION 'postgres cannot manage pg_cron';
+  END IF;
+
   IF NOT EXISTS (
     SELECT 1
     FROM pg_catalog.pg_indexes

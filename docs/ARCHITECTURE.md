@@ -490,6 +490,11 @@ la RPC interna `public.submit_report_v1`. El navegador no inserta directamente
 en `reports`. Turnstile, validación estricta, HMAC de IP, ventanas móviles,
 idempotencia y límites geográficos preceden a la inserción.
 
+En Supabase hosted, la identidad efímera de rate limiting se deriva únicamente
+de `cf-connecting-ip`. `x-forwarded-for` se ignora porque puede contener valores
+aportados por el cliente; en local solo se acepta cuando el proxy de pruebas se
+habilita explícitamente. La IP nunca se persiste: solo se almacena su HMAC.
+
 La RPC es la única capacidad concedida a `service_role`; ese rol continúa sin
 privilegios directos sobre tablas. La respuesta contiene exclusivamente
 tracking, fecha y estado `received`. No existe lectura pública de reportes.

@@ -22,7 +22,10 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 #### Seguridad
 
 - La IP no se almacena; solo se persiste un HMAC-SHA-256 estable.
-- La IP se canonicaliza, se rechazan cadenas de proxies ambiguas y el pepper
+- En Supabase hosted la IP se toma exclusivamente de `cf-connecting-ip`; se
+  ignora `x-forwarded-for` para impedir que el cliente falsifique la identidad
+  de cuota. El proxy local requiere habilitación explícita.
+- La IP se canonicaliza, se rechazan valores ausentes o ambiguos y el pepper
   exige al menos 32 bytes.
 - Los reintentos confirmados conservan su comprobante aunque cambie después la
   configuración de ciudad o catálogo.
@@ -30,7 +33,9 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 - La migración de corte elimina la vía pública directa sin habilitar SELECT.
 - Los límites geográficos permanecen nulos hasta convertir y revisar la fuente
   municipal; staging queda bloqueado de forma segura.
-- No se desplegó la Edge Function ni se ejecutó SQL remoto.
+- El prerrequisito `pg_cron`, la migración RPC aditiva y `submit-report` v2 se
+  validaron en el staging dedicado `ftpnmjshhzowbmdgbpkr`. No se aplicó el
+  corte de RLS ni se accedió a producción.
 
 ### Fase 1B — Base de datos versionada
 
