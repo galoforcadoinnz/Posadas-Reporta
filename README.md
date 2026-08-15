@@ -157,6 +157,8 @@ npm run lint
 - `AGENTS.md`: reglas permanentes y acciones prohibidas.
 - `docs/ARCHITECTURE.md`: visión y arquitectura base.
 - `docs/AUDITORIA_TECNICA_POSADAS_REPORTA_MVP_0_2.md`: auditoría del MVP 0.2.
+- `docs/PHASE_2_PRODUCTION_ROLLOUT_PLAN.md`: gates y recuperación para un
+  eventual rollout productivo; no autoriza su ejecución.
 - `CHANGELOG.md`: cambios relevantes del proyecto.
 
 ## Base de datos versionada
@@ -174,6 +176,8 @@ No se habilita lectura pública de reportes ni consulta por tracking. La
 implementación local está documentada en
 `docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`. El frontend y la Edge Function
 están desplegados únicamente en staging; producción permanece sin cambios.
+El plan controlado de producción está documentado, pero continúa en estado de
+borrador y requiere aprobaciones independientes para cada gate.
 
 La protección antiabuso envía la IP de origen a Cloudflare Turnstile para
 verificar el desafío. Posadas Reporta no persiste la IP sin procesar: almacena
