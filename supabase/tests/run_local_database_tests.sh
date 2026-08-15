@@ -64,12 +64,9 @@ docker exec "${container_name}" psql -U postgres -d postgres -v ON_ERROR_STOP=1 
   'REVOKE ALL PRIVILEGES ON FUNCTION public.prepare_report_initial_values(), public.generate_report_tracking_code(), public.set_updated_at() FROM service_role;'
 run_sql_file supabase/tests/phase_1b_database.sql
 
-docker exec "${container_name}" \
-  psql -U postgres -d postgres -v ON_ERROR_STOP=1 \
-  -c 'CREATE EXTENSION pg_cron;'
-
-run_sql_file supabase/migrations/20260806010100_create_secure_report_submission.sql
-run_sql_file supabase/migrations/20260806010200_disable_direct_report_inserts.sql
+run_sql_file supabase/migrations/20260815053645_enable_pg_cron.sql
+run_sql_file supabase/migrations/20260815054156_create_secure_report_submission.sql
+run_sql_file supabase/migrations/20260815054157_disable_direct_report_inserts.sql
 
 run_sql_file supabase/tests/phase_2_database.sql
 
