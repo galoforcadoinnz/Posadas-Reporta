@@ -8,7 +8,7 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 
 #### Agregado
 
-- Edge Function con autenticación publicable explícita, CORS por entorno,
+- Edge Function con validación explícita de clave publicable, CORS por entorno,
   lectura limitada del cuerpo y validación estricta.
 - Turnstile mediante Siteverify con acción, hostname e idempotency key.
 - RPC de mínimo privilegio que devuelve únicamente tracking, fecha y estado.
@@ -16,10 +16,16 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 - Rate limiting atómico con ventanas móviles de 15 minutos y 24 horas.
 - Limpieza programada de HMAC vencidos después de 48 horas.
 - Pantalla de confirmación y suites Deno, React, SQL y E2E locales.
+- Integración local del handler Edge con la RPC PostgreSQL real mediante un
+  contenedor efímero, sin montar el repositorio ni usar servicios remotos.
 
 #### Seguridad
 
 - La IP no se almacena; solo se persiste un HMAC-SHA-256 estable.
+- La IP se canonicaliza, se rechazan cadenas de proxies ambiguas y el pepper
+  exige al menos 32 bytes.
+- Los reintentos confirmados conservan su comprobante aunque cambie después la
+  configuración de ciudad o catálogo.
 - `service_role` conserva cero privilegios directos de tabla.
 - La migración de corte elimina la vía pública directa sin habilitar SELECT.
 - Los límites geográficos permanecen nulos hasta convertir y revisar la fuente

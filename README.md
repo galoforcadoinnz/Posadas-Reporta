@@ -71,6 +71,18 @@ Ejecutar ESLint:
 npm run lint
 ```
 
+Ejecutar las pruebas locales:
+
+```bash
+npm run test:unit
+npm run test:e2e
+deno task --config supabase/deno.json check
+bash supabase/tests/run_local_database_tests.sh
+```
+
+La última orden requiere Docker y Deno, y usa una instancia PostgreSQL efímera;
+no monta el repositorio ni se conecta a una base remota.
+
 Previsualizar el build local:
 
 ```bash
@@ -118,14 +130,16 @@ Este prototipo todavía no es apto para producción:
 
 - la implementación local de Fase 2 incorpora CAPTCHA y rate limiting, pero no
   está aplicada en ningún entorno remoto;
-- no hay validación de servidor propia ni moderación;
+- existe validación propia en la Edge Function y PostgreSQL, pero todavía no hay
+  moderación operativa;
 - las fotografías no se almacenan;
 - la Fase 1B versiona y valida localmente el esquema, pero sus migraciones aún
   no fueron aplicadas al proyecto remoto;
 - los límites geográficos oficiales de Posadas continúan pendientes y bloquean
   correctamente el envío hasta ser configurados;
-- existe una suite SQL transaccional para la base, pero todavía no hay pruebas
-  automatizadas de aplicación, integración ni E2E;
+- CI ejecuta pruebas SQL transaccionales en PostgreSQL efímero, Deno, React,
+  una integración handler Edge→RPC y un E2E interceptado; todavía falta cubrir
+  localmente la capa real de gateway/PostgREST;
 - los iconos de marcador de Leaflet dependen actualmente de `unpkg`;
 - el tile server público de OpenStreetMap no debe tratarse como infraestructura productiva ilimitada.
 
@@ -159,3 +173,9 @@ Las instrucciones y las dos rutas separadas están en:
 No se habilita lectura pública de reportes ni consulta por tracking. La
 implementación local está documentada en
 `docs/PHASE_2_SECURE_REPORT_SUBMISSION_PLAN.md`; no fue desplegada ni aplicada.
+
+La protección antiabuso envía la IP de origen a Cloudflare Turnstile para
+verificar el desafío. Posadas Reporta no persiste la IP sin procesar: almacena
+durante un máximo operativo de 48 horas un HMAC no reversible para aplicar las
+ventanas de rate limiting. Esta finalidad y el proveedor deberán incorporarse a
+la política de privacidad antes de habilitar el servicio públicamente.

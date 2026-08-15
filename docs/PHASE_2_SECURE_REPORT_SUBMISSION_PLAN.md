@@ -44,13 +44,15 @@ prueba; ninguna clave real se versiona.
 
 ## IP y rate limiting
 
-La fuente es el primer valor de `x-forwarded-for`, siguiendo el ejemplo oficial
-de Supabase para Edge Functions, pero solo se acepta cuando `SB_REGION` confirma
-el runtime hospedado. En local se requiere `TRUST_LOCAL_PROXY_HEADERS=true`. Si
-falta una IP confiable, la función falla de forma cerrada.
+La fuente es `x-forwarded-for`, pero solo se acepta cuando `SB_REGION` confirma
+el runtime hospedado y el gateway entrega un único valor sanitizado. Las cadenas
+con múltiples valores se rechazan para no confiar en una IP antepuesta por el
+cliente. Antes de desplegar se debe verificar este contrato contra el gateway
+objetivo. En local se requiere `TRUST_LOCAL_PROXY_HEADERS=true`.
 
-La IP nunca se almacena. La Edge Function calcula un HMAC-SHA-256 estable con
-`RATE_LIMIT_PEPPER`; PostgreSQL recibe 64 caracteres hexadecimales. La RPC
+La IP se canonicaliza y nunca se almacena. La Edge Function calcula un
+HMAC-SHA-256 con separación de dominio y un `RATE_LIMIT_PEPPER` de al menos 32
+bytes; PostgreSQL recibe 64 caracteres hexadecimales. La RPC
 serializa cada HMAC y aplica ventanas móviles de 5 reportes en 15 minutos y 20
 en 24 horas. Conteo, incremento, idempotencia e inserción son una transacción.
 
@@ -67,6 +69,10 @@ coordenadas y urgencia.
 - mismo `requestId` y contenido: mismo comprobante, sin nueva fila ni cuota;
 - mismo `requestId` y contenido diferente: conflicto genérico;
 - concurrencia: advisory lock y constraint `UNIQUE` preservan una fila.
+
+El lookup por `submission_id` y la comparación de huella ocurren antes de
+consultar configuración mutable. Un reporte confirmado conserva el mismo
+comprobante aunque luego se desactive su ciudad o categoría o cambien límites.
 
 ## Geografía y bloqueo de staging
 
@@ -105,15 +111,26 @@ no se restauran automáticamente los grants públicos.
 
 ## Pruebas
 
-- SQL: estructura, permisos, RPC, idempotencia, ventanas móviles, medianoche,
+- SQL: estructura, permisos, RPC, idempotencia, ambas ventanas móviles,
   limpieza y rechazo del INSERT directo.
-- Deno: cuerpo streaming, tipos, campos desconocidos, IP, auth publicable,
-  Turnstile, idempotency key, concurrencia de invocaciones y logs.
+- Deno: cuerpo streaming, tipos, campos desconocidos, IP, clave publicable,
+  Turnstile, idempotency key, invocaciones simultáneas del handler y logs.
 - React: servicio limitado y pantalla de comprobante.
 - Playwright: flujo interceptado y ausencia de `POST /rest/v1/reports`.
+- Integración local: handler Edge y mapeo de argumentos contra la RPC real en
+  PostgreSQL efímero; el transporte de prueba usa `docker exec` y stdin.
 
-Las pruebas SQL no se ejecutan hasta tener un entorno local descartable con las
-migraciones aplicadas. Nunca se ejecutan en producción.
+La concurrencia real de PostgreSQL no pertenece al E2E interceptado. El runner
+la ejecuta desde dos sesiones contra la base local descartable y comprueba un
+único reporte y un único evento de cuota.
+
+Las pruebas SQL y la integración usan exclusivamente el contenedor local
+descartable creado por `supabase/tests/run_local_database_tests.sh`. Nunca se
+ejecutan en producción.
+
+Las migraciones versionadas son deliberadamente de una sola ejecución y dependen
+del ledger de migraciones de Supabase; no deben reintentarse manualmente sobre
+un esquema que ya las registró como aplicadas.
 
 ## Configuración de staging
 
@@ -133,7 +150,7 @@ Edge Function privada u operativa:
 - `TURNSTILE_SECRET_KEY`;
 - `TURNSTILE_ALLOWED_HOSTNAMES`;
 - `TURNSTILE_EXPECTED_ACTION=submit_report`;
-- `RATE_LIMIT_PEPPER`;
+- `RATE_LIMIT_PEPPER` con al menos 32 bytes aleatorios;
 - `TRUST_LOCAL_PROXY_HEADERS=true` solo en local, nunca en hosted.
 
 No se incluyen valores reales en el repositorio ni en comandos documentados.

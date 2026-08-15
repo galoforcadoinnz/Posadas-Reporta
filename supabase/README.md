@@ -80,7 +80,8 @@ Fase 1B revoca todos los privilegios directos de `service_role` sobre las cinco
 tablas versionadas. Aunque el rol conserva `BYPASSRLS`, no puede leer, escribir,
 truncar ni administrar estas tablas sin una migración posterior explícita. Fase
 2 deberá conceder únicamente los permisos que requiera la operación de servidor
-aprobada.
+aprobada. La Fase 2 local concede únicamente `EXECUTE` sobre
+`submit_report_v1` y vuelve a revocar las funciones auxiliares de triggers.
 
 La devolución limitada del tracking se implementa localmente mediante las
 migraciones `20260806010100` y `20260806010200`, la función `submit-report` y la
@@ -90,8 +91,16 @@ La primera migración exige `pg_cron` disponible y falla antes de alterar objeto
 si no puede programar la limpieza. Los límites geográficos de Posadas quedan
 nulos hasta completar una conversión revisada desde cartografía oficial.
 
+Los eventos de rate limiting viven en el esquema exclusivo
+`posadas_reporta_private`; ningún rol público ni `service_role` tiene acceso
+directo. La limpieza dispone de un índice propio por `created_at`.
+
 La segunda migración revoca el INSERT directo y elimina la política pública
 heredada. Debe mostrarse y aprobarse antes de ejecutarse.
+
+Las migraciones son de una sola ejecución y dependen del ledger de Supabase. Un
+fallo transaccional se corrige hacia adelante; no se reejecutan manualmente
+migraciones que el entorno ya registró como aplicadas.
 
 ## Pruebas
 
@@ -99,6 +108,20 @@ Las pruebas SQL terminan con `ROLLBACK`. Contienen intentos negativos de
 `UPDATE`, `DELETE` y `TRUNCATE` ejecutados como rol público para demostrar que
 son rechazados y verifican que `service_role` no tenga privilegios directos.
 Nunca deben ejecutarse en producción.
+
+La regresión local completa se ejecuta con:
+
+```bash
+bash supabase/tests/run_local_database_tests.sh
+```
+
+El runner requiere Docker y Deno. Usa la imagen oficial de Supabase PostgreSQL fijada por digest,
+levanta un contenedor descartable y envía cada SQL exclusivamente por stdin.
+También verifica dos invocaciones PostgreSQL concurrentes con el mismo
+`requestId` y ejecuta el handler Edge contra la RPC PostgreSQL real. El
+transporte de integración usa `docker exec` sin shell y envía el SQL generado
+por stdin. No monta el repositorio dentro del contenedor ni contiene una URL de
+base de datos remota. La capa gateway/PostgREST queda fuera de esta prueba.
 
 Si no hay Docker, Supabase CLI o un entorno local descartable, no debe
 intentarse improvisar una ejecución contra el proyecto remoto.
