@@ -24,20 +24,26 @@ export async function createRateLimitKey(ip: string, pepper: string): Promise<st
 }
 
 export function trustedInfrastructureIp(request: Request): string | null {
-  // Supabase documenta x-forwarded-for como la fuente de IP en Edge Functions.
-  // Solo se acepta en el runtime hospedado (SB_REGION) o en pruebas locales
-  // explícitas; fuera de esos contextos se falla de forma cerrada.
   const hostedRuntime = Boolean(Deno.env.get('SB_REGION'))
   const explicitlyTrustedLocalProxy = Deno.env.get('TRUST_LOCAL_PROXY_HEADERS') === 'true'
-  if (!hostedRuntime && !explicitlyTrustedLocalProxy) return null
+
+  // Supabase hosted se encuentra detrás de Cloudflare. CF-Connecting-IP es una
+  // única dirección agregada por el edge; X-Forwarded-For puede conservar una
+  // cadena aportada por el cliente y no es una identidad segura para la cuota.
+  if (hostedRuntime) {
+    const cloudflareIp = request.headers.get('cf-connecting-ip')
+    if (!cloudflareIp || cloudflareIp.includes(',')) return null
+    return canonicalIpAddress(cloudflareIp.trim())
+  }
+
+  // El proxy local solo se confía durante pruebas que lo habilitan de forma
+  // explícita. Cualquier otro runtime falla de forma cerrada.
+  if (!explicitlyTrustedLocalProxy) return null
 
   const forwardedFor = request.headers.get('x-forwarded-for')
   if (!forwardedFor) return null
 
-  // La función falla de forma cerrada ante cadenas de proxies. En el entorno
-  // autorizado, el gateway debe entregar un único valor ya sanitizado; aceptar
-  // el primer elemento permitiría confiar accidentalmente en un valor agregado
-  // por el cliente antes de llegar al proxy.
+  // Las pruebas locales también exigen una única dirección ya sanitizada.
   if (forwardedFor.includes(',')) return null
 
   return canonicalIpAddress(forwardedFor.trim())

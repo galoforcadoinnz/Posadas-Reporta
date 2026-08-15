@@ -222,6 +222,62 @@ Deno.test('rejects ambiguous proxy chains', () => {
   }
 })
 
+Deno.test('uses only Cloudflare client IP in the hosted runtime', () => {
+  const previousRegion = Deno.env.get('SB_REGION')
+  Deno.env.set('SB_REGION', 'sa-east-1')
+  try {
+    const request = new Request('https://staging.example', {
+      headers: {
+        'cf-connecting-ip': '2001:0DB8:0:0:0:0:0:1',
+        'x-forwarded-for': '203.0.113.10, 198.51.100.20',
+      },
+    })
+    assertEquals(trustedInfrastructureIp(request), '2001:db8::1')
+  } finally {
+    if (previousRegion === undefined) Deno.env.delete('SB_REGION')
+    else Deno.env.set('SB_REGION', previousRegion)
+  }
+})
+
+Deno.test('fails closed when hosted Cloudflare IP is absent or ambiguous', () => {
+  const previousRegion = Deno.env.get('SB_REGION')
+  Deno.env.set('SB_REGION', 'sa-east-1')
+  try {
+    const spoofedForwardedFor = new Request('https://staging.example', {
+      headers: { 'x-forwarded-for': '203.0.113.10' },
+    })
+    const ambiguousCloudflareIp = new Request('https://staging.example', {
+      headers: { 'cf-connecting-ip': '203.0.113.10, 198.51.100.20' },
+    })
+    assertEquals(trustedInfrastructureIp(spoofedForwardedFor), null)
+    assertEquals(trustedInfrastructureIp(ambiguousCloudflareIp), null)
+  } finally {
+    if (previousRegion === undefined) Deno.env.delete('SB_REGION')
+    else Deno.env.set('SB_REGION', previousRegion)
+  }
+})
+
+Deno.test('accepts one sanitized forwarded IP only in explicit local mode', () => {
+  const previousRegion = Deno.env.get('SB_REGION')
+  const previousTrust = Deno.env.get('TRUST_LOCAL_PROXY_HEADERS')
+  Deno.env.delete('SB_REGION')
+  Deno.env.set('TRUST_LOCAL_PROXY_HEADERS', 'true')
+  try {
+    const request = new Request('http://localhost', {
+      headers: {
+        'cf-connecting-ip': '198.51.100.20',
+        'x-forwarded-for': '192.168.001.010',
+      },
+    })
+    assertEquals(trustedInfrastructureIp(request), '192.168.1.10')
+  } finally {
+    if (previousRegion === undefined) Deno.env.delete('SB_REGION')
+    else Deno.env.set('SB_REGION', previousRegion)
+    if (previousTrust === undefined) Deno.env.delete('TRUST_LOCAL_PROXY_HEADERS')
+    else Deno.env.set('TRUST_LOCAL_PROXY_HEADERS', previousTrust)
+  }
+})
+
 Deno.test('sends requestId as Turnstile idempotency_key and verifies action and hostname', async () => {
   let capturedIdempotencyKey: FormDataEntryValue | null = null
   let capturedResponse: FormDataEntryValue | null = null
