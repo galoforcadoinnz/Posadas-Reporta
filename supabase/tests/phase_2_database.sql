@@ -134,8 +134,26 @@ BEGIN
      )
      OR pg_catalog.has_function_privilege(
        'service_role', 'public.set_updated_at()', 'EXECUTE'
-     ) THEN
+  ) THEN
     RAISE EXCEPTION 'service_role can execute an auxiliary trigger function';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.cities
+    WHERE public.cities.id = 'a03b4d86-3784-41ae-a264-a51441e0b397'::uuid
+      AND public.cities.slug = 'posadas'::text
+      AND public.cities.is_active = true
+      AND public.cities.reporting_min_latitude =
+        (-27.5822986159999)::double precision
+      AND public.cities.reporting_max_latitude =
+        (-27.3242615789999)::double precision
+      AND public.cities.reporting_min_longitude =
+        (-56.0585472499999)::double precision
+      AND public.cities.reporting_max_longitude =
+        (-55.8426106539999)::double precision
+  ) THEN
+    RAISE EXCEPTION 'The reviewed Posadas reporting bounds are unavailable';
   END IF;
 END;
 $test$ LANGUAGE plpgsql;
@@ -509,5 +527,48 @@ $test$ LANGUAGE plpgsql;
 -- La concurrencia real requiere dos sesiones PostgreSQL simultáneas y debe
 -- ejecutarse desde el runner local/CI de integración. Esta suite transaccional
 -- verifica aquí el advisory lock y la constraint UNIQUE de forma estructural.
+
+DO $test$
+DECLARE
+  target_function oid := pg_catalog.to_regprocedure('public.rls_auto_enable()');
+  role_name text;
+BEGIN
+  IF target_function IS NULL THEN
+    RAISE EXCEPTION 'public.rls_auto_enable() is unavailable';
+  END IF;
+
+  FOREACH role_name IN ARRAY ARRAY['anon', 'authenticated', 'service_role']
+  LOOP
+    IF pg_catalog.has_function_privilege(
+      role_name,
+      target_function,
+      'EXECUTE'
+    ) THEN
+      RAISE EXCEPTION
+        'Role % unexpectedly executes public.rls_auto_enable()', role_name;
+    END IF;
+  END LOOP;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_proc AS procedure
+    CROSS JOIN LATERAL pg_catalog.aclexplode(procedure.proacl) AS privilege
+    WHERE procedure.oid = target_function
+      AND privilege.grantee = 0
+      AND privilege.privilege_type = 'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'PUBLIC unexpectedly executes public.rls_auto_enable()';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_event_trigger
+    WHERE evtfoid = target_function
+      AND evtenabled <> 'D'
+  ) THEN
+    RAISE EXCEPTION 'The RLS auto-enable event trigger is not enabled';
+  END IF;
+END;
+$test$ LANGUAGE plpgsql;
 
 ROLLBACK;
