@@ -83,19 +83,23 @@ truncar ni administrar estas tablas sin una migración posterior explícita. Fas
 aprobada. La Fase 2 local concede únicamente `EXECUTE` sobre
 `submit_report_v1` y vuelve a revocar las funciones auxiliares de triggers.
 
-La devolución limitada del tracking se implementa localmente mediante las
-migraciones `20260806010100` y `20260806010200`, la función `submit-report` y la
-suite `phase_2_database.sql`; todavía no fue aplicada remotamente.
+La devolución limitada del tracking se implementa mediante las
+migraciones `20260815053645`, `20260815054156` y `20260815054157`, la función
+`submit-report` y la suite `phase_2_database.sql`. Las dos primeras migraciones
+y `submit-report` v2 fueron aplicadas al staging dedicado; la migración de corte
+permanece sin aplicar.
 
-La primera migración exige `pg_cron` disponible y falla antes de alterar objetos
-si no puede programar la limpieza. Los límites geográficos de Posadas quedan
-nulos hasta completar una conversión revisada desde cartografía oficial.
+La migración `20260815053645` exige `pg_cron` disponible, lo instala en
+`pg_catalog` y valida su API antes de continuar. La siguiente migración falla
+antes de alterar objetos si no puede programar la limpieza. Los límites
+geográficos de Posadas quedan nulos hasta completar una conversión revisada
+desde cartografía oficial.
 
 Los eventos de rate limiting viven en el esquema exclusivo
 `posadas_reporta_private`; ningún rol público ni `service_role` tiene acceso
 directo. La limpieza dispone de un índice propio por `created_at`.
 
-La segunda migración revoca el INSERT directo y elimina la política pública
+La tercera migración revoca el INSERT directo y elimina la política pública
 heredada. Debe mostrarse y aprobarse antes de ejecutarse.
 
 Las migraciones son de una sola ejecución y dependen del ledger de Supabase. Un
