@@ -83,13 +83,12 @@ truncar ni administrar estas tablas sin una migración posterior explícita. Fas
 aprobada. La Fase 2 local concede únicamente `EXECUTE` sobre
 `submit_report_v1` y vuelve a revocar las funciones auxiliares de triggers.
 
-La devolución limitada del tracking se implementa mediante las
-migraciones `20260815053645`, `20260815054156`, `20260815054157`,
-`20260815184117` y `20260815190312`, la función `submit-report` y la suite
-`phase_2_database.sql`. El prerrequisito, la RPC, los límites y
-`submit-report` v3 fueron aplicados al staging dedicado; la migración de corte
-permanece sin aplicar. El hardening de `rls_auto_enable()` fue aplicado y
-validado exclusivamente en staging.
+La devolución limitada del tracking se implementa mediante las migraciones
+`20260815053645`, `20260815054156`, `20260815184117`, `20260815190312` y
+`20260815193128`, la función `submit-report` y la suite
+`phase_2_database.sql`. El prerrequisito, la RPC, los límites, el hardening de
+`rls_auto_enable()`, `submit-report` v3 y el corte RLS fueron aplicados y
+validados exclusivamente en staging.
 
 La migración `20260815053645` exige `pg_cron` disponible, lo instala en
 `pg_catalog` y valida su API antes de continuar. La siguiente migración falla
@@ -110,14 +109,16 @@ Los eventos de rate limiting viven en el esquema exclusivo
 `posadas_reporta_private`; ningún rol público ni `service_role` tiene acceso
 directo. La limpieza dispone de un índice propio por `created_at`.
 
-La migración `20260815054157` revoca el INSERT directo y elimina la política
-pública heredada. Debe mostrarse y aprobarse antes de ejecutarse.
+La migración
+`20260815193128_20260815054157_disable_direct_report_inserts.sql` revoca el
+INSERT directo y elimina la política pública heredada. Fue mostrada, aprobada,
+aplicada y validada exclusivamente en staging.
 
-El ledger local replica la versión `20260815190312` y el nombre
-`20260815185725_restrict_rls_auto_enable_execute` registrados en staging. El
-único timestamp local pendiente allí es `20260815054157`, el corte RLS. No se
-usa `migration repair`: el historial remoto conserva el registro real generado
-al aplicar el hardening.
+El ledger local replica las versiones `20260815190312` y `20260815193128`, con
+los nombres `20260815185725_restrict_rls_auto_enable_execute` y
+`20260815054157_disable_direct_report_inserts` registrados en staging. No se
+usa `migration repair`: el historial remoto conserva los registros reales
+generados al aplicar ambas migraciones.
 
 Las migraciones son de una sola ejecución y dependen del ledger de Supabase. Un
 fallo transaccional se corrige hacia adelante; no se reejecutan manualmente
