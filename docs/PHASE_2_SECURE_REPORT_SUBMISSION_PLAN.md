@@ -190,7 +190,9 @@ No se incluyen valores reales en el repositorio ni en comandos documentados.
 11. Completado: postcondiciones SQL y canary Turnstile posteriores al corte.
 12. Completado: inserción directa rechazada para `anon` y `authenticated`.
 
-Producción requiere otro plan, backup, ventana y aprobación.
+El rollout productivo permanece sin autorizar y se rige por
+`docs/PHASE_2_PRODUCTION_ROLLOUT_PLAN.md`, que exige inventario, backup,
+ventana y aprobaciones independientes por gate.
 
 ## Gate previo al cutover
 
