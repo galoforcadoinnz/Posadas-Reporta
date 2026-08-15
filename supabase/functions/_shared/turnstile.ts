@@ -40,16 +40,16 @@ export async function verifyTurnstile({
       },
     )
   } catch {
-    return false
+    throw new Error('TURNSTILE_UNAVAILABLE')
   }
 
-  if (!response.ok) return false
+  if (!response.ok) throw new Error('TURNSTILE_UNAVAILABLE')
 
   let result: TurnstileVerification
   try {
     result = await response.json()
   } catch {
-    return false
+    throw new Error('TURNSTILE_UNAVAILABLE')
   }
 
   return result.success === true &&

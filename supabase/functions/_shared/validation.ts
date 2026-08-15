@@ -27,12 +27,21 @@ const EXPECTED_FIELDS = new Set([
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const CITY_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-export class RequestValidationError extends Error {}
+export class RequestValidationError extends Error {
+  constructor(message: string, readonly status = 400) {
+    super(message)
+  }
+}
 
 export async function readJsonBody(
   request: Request,
   maxBytes = MAX_REQUEST_BODY_BYTES,
 ): Promise<unknown> {
+  const contentType = request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
+  if (contentType !== 'application/json') {
+    throw new RequestValidationError('Unsupported media type', 415)
+  }
+
   if (!request.body) {
     throw new RequestValidationError('Missing request body')
   }
@@ -48,7 +57,7 @@ export async function readJsonBody(
       totalBytes += value.byteLength
       if (totalBytes > maxBytes) {
         await reader.cancel('Request body too large')
-        throw new RequestValidationError('Request body too large')
+        throw new RequestValidationError('Request body too large', 413)
       }
       chunks.push(value)
     }

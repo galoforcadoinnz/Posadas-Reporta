@@ -3,6 +3,10 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 export async function createRateLimitKey(ip: string, pepper: string): Promise<string> {
+  if (new TextEncoder().encode(pepper).byteLength < 32) {
+    throw new Error('RATE_LIMIT_PEPPER must contain at least 32 bytes')
+  }
+
   const encoder = new TextEncoder()
   const key = await crypto.subtle.importKey(
     'raw',
@@ -11,7 +15,11 @@ export async function createRateLimitKey(ip: string, pepper: string): Promise<st
     false,
     ['sign'],
   )
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(ip))
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    encoder.encode(`posadas-reporta:rate-limit:v1:${ip}`),
+  )
   return bytesToHex(new Uint8Array(signature))
 }
 
@@ -26,24 +34,30 @@ export function trustedInfrastructureIp(request: Request): string | null {
   const forwardedFor = request.headers.get('x-forwarded-for')
   if (!forwardedFor) return null
 
-  const firstAddress = forwardedFor.split(',')[0]?.trim()
-  if (!firstAddress || firstAddress.length > 45 || !isValidIpAddress(firstAddress)) {
-    return null
-  }
+  // La función falla de forma cerrada ante cadenas de proxies. En el entorno
+  // autorizado, el gateway debe entregar un único valor ya sanitizado; aceptar
+  // el primer elemento permitiría confiar accidentalmente en un valor agregado
+  // por el cliente antes de llegar al proxy.
+  if (forwardedFor.includes(',')) return null
 
-  return firstAddress
+  return canonicalIpAddress(forwardedFor.trim())
 }
 
-function isValidIpAddress(value: string): boolean {
+export function canonicalIpAddress(value: string): string | null {
+  if (!value || value.length > 45) return null
+
   if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(value)) {
-    return value.split('.').every((part) => Number(part) <= 255)
+    const parts = value.split('.')
+    if (!parts.every((part) => Number(part) <= 255)) return null
+    return parts.map((part) => String(Number(part))).join('.')
   }
 
-  if (!value.includes(':') || !/^[0-9a-f:]+$/i.test(value)) return false
+  if (!value.includes(':') || !/^[0-9a-f:]+$/i.test(value)) return null
   try {
     const parsed = new URL(`http://[${value}]/`)
-    return parsed.hostname.length > 2
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, '')
+    return hostname.includes(':') ? hostname.toLowerCase() : null
   } catch {
-    return false
+    return null
   }
 }
