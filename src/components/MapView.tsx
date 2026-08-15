@@ -215,6 +215,11 @@ function MapView({
 
     }
 
+    if (!isInsideReportingBounds(selectedLocation[0], selectedLocation[1])) {
+      setLocationError('La ubicación está fuera del área habilitada.')
+      return
+    }
+
     onContinue(
       selectedLocation[0],
       selectedLocation[1]

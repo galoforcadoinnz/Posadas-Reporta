@@ -1,11 +1,33 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { createReport } = vi.hoisted(() => ({ createReport: vi.fn() }))
+const { createReport, MockReportSubmissionError } = vi.hoisted(() => ({
+  createReport: vi.fn(),
+  MockReportSubmissionError: class extends Error {
+    readonly code: string
+    readonly status: number | null
+    readonly retryAfterSeconds: number | null
 
-vi.mock('../services/reports', () => ({ createReport }))
+    constructor(
+      code: string,
+      status: number | null = null,
+      retryAfterSeconds: number | null = null
+    ) {
+      super(code)
+      this.code = code
+      this.status = status
+      this.retryAfterSeconds = retryAfterSeconds
+    }
+  },
+}))
+
+vi.mock('../services/reports', () => ({
+  createReport,
+  ReportSubmissionError: MockReportSubmissionError,
+}))
 
 import { useReportSubmission } from './useReportSubmission'
+import { ReportSubmissionError } from '../services/reports'
 
 const input = {
   turnstileToken: 'first-token',
@@ -88,5 +110,34 @@ describe('useReportSubmission', () => {
       })
       await firstSubmission
     })
+  })
+
+  it('uses a new requestId after an idempotency conflict', async () => {
+    createReport
+      .mockRejectedValueOnce(new ReportSubmissionError('IDEMPOTENCY_CONFLICT', 409))
+      .mockResolvedValueOnce({
+        trackingCode: 'PR-0123456789ABCDEF0123',
+        createdAt: '2026-08-06T00:00:00.000Z',
+        status: 'received',
+      })
+    const { result } = renderHook(() => useReportSubmission())
+
+    await act(() => result.current.submit(input))
+    const conflictedRequestId = createReport.mock.calls[0][0].requestId
+    expect(result.current.submissionError).toMatch(/no puede reutilizarse/i)
+
+    await act(() => result.current.submit({ ...input, turnstileToken: 'fresh-token' }))
+    expect(createReport.mock.calls[1][0].requestId).not.toBe(conflictedRequestId)
+  })
+
+  it('shows the server retry interval for rate limiting', async () => {
+    createReport.mockRejectedValueOnce(
+      new ReportSubmissionError('RATE_LIMIT_EXCEEDED', 429, 900)
+    )
+    const { result } = renderHook(() => useReportSubmission())
+
+    await act(() => result.current.submit(input))
+
+    expect(result.current.submissionError).toContain('15 minutos')
   })
 })

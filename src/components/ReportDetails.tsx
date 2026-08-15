@@ -6,6 +6,9 @@ import type {
   Urgency,
 } from '../types/report'
 
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024
+const ALLOWED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
 type ReportDetailsProps = {
   location: ReportLocation
   category: Category
@@ -26,14 +29,29 @@ function ReportDetails({
 
   const [validationError, setValidationError] =
     useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
 
   const handlePhotoChange = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
 
-    const file =
-      event.target.files?.[0] || null
+    const file = event.target.files?.[0] || null
 
+    if (file && !ALLOWED_PHOTO_TYPES.has(file.type)) {
+      event.target.value = ''
+      setPhotoError('La fotografía debe ser JPEG, PNG o WebP.')
+      onChange({ photo: null })
+      return
+    }
+
+    if (file && file.size > MAX_PHOTO_BYTES) {
+      event.target.value = ''
+      setPhotoError('La fotografía no puede superar los 10 MB.')
+      onChange({ photo: null })
+      return
+    }
+
+    setPhotoError(null)
     onChange({ photo: file })
 
   }
@@ -164,7 +182,7 @@ function ReportDetails({
         <input
           id="photo"
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           capture="environment"
           onChange={handlePhotoChange}
         />
@@ -181,6 +199,12 @@ function ReportDetails({
 
           </p>
 
+        )}
+
+        {photoError && (
+          <p className="form-error" role="alert">
+            {photoError}
+          </p>
         )}
 
       </div>

@@ -15,7 +15,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     env: {
       VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
-      VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local-test-key',
       VITE_CITY_SLUG: 'posadas',
       VITE_TURNSTILE_SITE_KEY: '1x00000000000000000000AA',
     },

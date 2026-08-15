@@ -103,7 +103,6 @@ function App() {
       description: reportDraft.description.trim(),
       latitude: reportDraft.location.latitude,
       longitude: reportDraft.location.longitude,
-      address: null,
       urgency: reportDraft.urgency,
     })
 

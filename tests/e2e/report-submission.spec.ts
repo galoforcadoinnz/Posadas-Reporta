@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test'
 
 test('completes the secure flow without a direct reports POST', async ({ page }) => {
   let directReportsPosts = 0
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
+    'Access-Control-Allow-Headers':
+      'apikey, authorization, content-type, x-client-info, x-retry-count',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  }
 
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'geolocation', {
@@ -37,13 +43,17 @@ test('completes the secure flow without a direct reports POST', async ({ page })
 
   await page.route('http://127.0.0.1:54321/rest/v1/**', async (route) => {
     const url = route.request().url()
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders })
+      return
+    }
     if (url.includes('/reports') && route.request().method() === 'POST') {
       directReportsPosts += 1
     }
     if (url.includes('/cities')) {
       await route.fulfill({
         contentType: 'application/json',
-        headers: { 'Content-Range': '0-0/1' },
+        headers: { ...corsHeaders, 'Content-Range': '0-0/1' },
         body: JSON.stringify({
           id: 'a03b4d86-3784-41ae-a264-a51441e0b397',
           name: 'Posadas',
@@ -58,6 +68,7 @@ test('completes the secure flow without a direct reports POST', async ({ page })
     } else if (url.includes('/categories')) {
       await route.fulfill({
         contentType: 'application/json',
+        headers: corsHeaders,
         body: JSON.stringify([{
           id: '30000000-0000-4000-8000-000000000001',
           name: 'Baches',
@@ -73,6 +84,10 @@ test('completes the secure flow without a direct reports POST', async ({ page })
   })
 
   await page.route('http://127.0.0.1:54321/functions/v1/submit-report', async (route) => {
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: corsHeaders })
+      return
+    }
     const body = route.request().postDataJSON()
     expect(body).not.toHaveProperty('photo')
     expect(body).not.toHaveProperty('status')
@@ -80,6 +95,7 @@ test('completes the secure flow without a direct reports POST', async ({ page })
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
+      headers: corsHeaders,
       body: JSON.stringify({
         trackingCode: 'PR-0123456789ABCDEF0123',
         createdAt: '2026-08-06T00:00:00.000Z',

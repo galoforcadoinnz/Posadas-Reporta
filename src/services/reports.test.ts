@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { FunctionsHttpError } from '@supabase/supabase-js'
 
 const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }))
 
@@ -55,9 +56,32 @@ describe('createReport', () => {
 
   it('rejects malformed or expanded responses', async () => {
     invoke.mockResolvedValue({
-      data: { trackingCode: 'PR-INVALID', report: { description: 'sensitive' } },
+      data: {
+        trackingCode: 'PR-0123456789ABCDEF0123',
+        createdAt: '2026-08-06T00:00:00.000Z',
+        status: 'received',
+        report: { description: 'sensitive' },
+      },
       error: null,
     })
-    await expect(createReport(input)).rejects.toThrow('No se pudo crear el reporte.')
+    await expect(createReport(input)).rejects.toMatchObject({
+      code: 'SUBMISSION_FAILED',
+    })
+  })
+
+  it('preserves a typed rate-limit error and Retry-After', async () => {
+    invoke.mockResolvedValue({
+      data: null,
+      error: new FunctionsHttpError(new Response(
+        JSON.stringify({ code: 'RATE_LIMIT_EXCEEDED' }),
+        { status: 429, headers: { 'Retry-After': '900' } }
+      )),
+    })
+
+    await expect(createReport(input)).rejects.toMatchObject({
+      code: 'RATE_LIMIT_EXCEEDED',
+      status: 429,
+      retryAfterSeconds: 900,
+    })
   })
 })
