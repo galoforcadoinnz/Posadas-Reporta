@@ -25,7 +25,7 @@ BEGIN
      OR pg_catalog.has_table_privilege('service_role', 'public.reports', 'SELECT')
      OR pg_catalog.has_table_privilege(
        'service_role',
-       'private.report_submission_rate_events',
+       'posadas_reporta_private.report_submission_rate_events',
        'SELECT'
      ) THEN
     RAISE EXCEPTION 'Unexpected direct table privilege detected';
@@ -100,9 +100,31 @@ BEGIN
     FROM cron.job
     WHERE cron.job.jobname = 'posadas-reporta-rate-limit-cleanup'
       AND cron.job.command =
-        'SELECT private.delete_expired_report_submission_rate_events();'
+        'SELECT posadas_reporta_private.delete_expired_report_submission_rate_events();'
   ) THEN
     RAISE EXCEPTION 'The rate-limit cleanup job is unavailable';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_indexes
+    WHERE pg_catalog.pg_indexes.schemaname = 'posadas_reporta_private'
+      AND pg_catalog.pg_indexes.tablename = 'report_submission_rate_events'
+      AND pg_catalog.pg_indexes.indexname = 'report_submission_rate_events_created_at_idx'
+  ) THEN
+    RAISE EXCEPTION 'The rate-limit cleanup index is unavailable';
+  END IF;
+
+  IF pg_catalog.has_function_privilege(
+       'service_role', 'public.prepare_report_initial_values()', 'EXECUTE'
+     )
+     OR pg_catalog.has_function_privilege(
+       'service_role', 'public.generate_report_tracking_code()', 'EXECUTE'
+     )
+     OR pg_catalog.has_function_privilege(
+       'service_role', 'public.set_updated_at()', 'EXECUTE'
+     ) THEN
+    RAISE EXCEPTION 'service_role can execute an auxiliary trigger function';
   END IF;
 END;
 $test$ LANGUAGE plpgsql;
@@ -174,12 +196,39 @@ BEGIN
 
   SELECT pg_catalog.count(*)
   INTO event_count
-  FROM private.report_submission_rate_events
-  WHERE private.report_submission_rate_events.submission_id = request_id;
+  FROM posadas_reporta_private.report_submission_rate_events
+  WHERE posadas_reporta_private.report_submission_rate_events.submission_id = request_id;
 
   IF report_count <> 1 OR event_count <> 1 THEN
     RAISE EXCEPTION 'An idempotent retry inserted or charged more than once';
   END IF;
+
+  UPDATE public.categories
+  SET is_active = false
+  WHERE public.categories.id = category_id;
+
+  SELECT *
+  INTO retry_result
+  FROM public.submit_report_v1(
+    request_id,
+    rate_key,
+    'posadas',
+    category_id,
+    NULL,
+    'Reporte idempotente de Fase 2',
+    -27.36,
+    -55.90,
+    'medium'
+  );
+
+  IF first_result.tracking_code IS DISTINCT FROM retry_result.tracking_code
+     OR first_result.created_at IS DISTINCT FROM retry_result.created_at THEN
+    RAISE EXCEPTION 'Mutable catalog state broke an idempotent retry';
+  END IF;
+
+  UPDATE public.categories
+  SET is_active = true
+  WHERE public.categories.id = category_id;
 
   BEGIN
     PERFORM *
@@ -207,11 +256,79 @@ $test$ LANGUAGE plpgsql;
 DO $test$
 DECLARE
   category_id uuid;
+  rate_key text := pg_catalog.repeat('1', 64);
+  generated_request_id uuid;
+  index_number integer;
+BEGIN
+  SELECT public.categories.id
+  INTO category_id
+  FROM public.categories
+  WHERE public.categories.is_active = true
+  ORDER BY public.categories.id
+  LIMIT 1;
+
+  FOR index_number IN 1..5 LOOP
+    generated_request_id := pg_catalog.gen_random_uuid();
+
+    INSERT INTO public.reports (
+      submission_id, submission_fingerprint, city_id, category_id, description,
+      latitude, longitude, urgency, status, moderation_status, workflow_status
+    )
+    SELECT
+      generated_request_id,
+      pg_catalog.repeat('1', 64),
+      public.cities.id,
+      category_id,
+      'Evento sintético de límite de quince minutos',
+      -27.36,
+      -55.90,
+      'medium',
+      'pending',
+      'pending',
+      'received'
+    FROM public.cities
+    WHERE public.cities.slug = 'posadas';
+
+    INSERT INTO posadas_reporta_private.report_submission_rate_events (
+      submission_id, rate_limit_key, created_at
+    )
+    VALUES (
+      generated_request_id,
+      rate_key,
+      pg_catalog.statement_timestamp() - INTERVAL '14 minutes'
+    );
+  END LOOP;
+
+  BEGIN
+    PERFORM *
+    FROM public.submit_report_v1(
+      '20000000-0000-4000-8000-000000000098'::uuid,
+      rate_key,
+      'posadas',
+      category_id,
+      NULL,
+      'Debe respetar el límite de quince minutos',
+      -27.36,
+      -55.90,
+      'medium'
+    );
+    RAISE EXCEPTION 'The rolling 15-minute limit was not enforced';
+  EXCEPTION
+    WHEN raise_exception THEN
+      IF SQLERRM <> 'RATE_LIMIT_EXCEEDED' THEN
+        RAISE;
+      END IF;
+  END;
+END;
+$test$ LANGUAGE plpgsql;
+
+DO $test$
+DECLARE
+  category_id uuid;
   rate_key text := pg_catalog.repeat('b', 64);
   generated_request_id uuid;
-  previous_day_timestamp timestamp with time zone :=
-    pg_catalog.date_trunc('day', pg_catalog.statement_timestamp())
-    - INTERVAL '1 hour';
+  within_24_hours_timestamp timestamp with time zone :=
+    pg_catalog.statement_timestamp() - INTERVAL '23 hours';
   index_number integer;
 BEGIN
   SELECT public.categories.id
@@ -250,16 +367,16 @@ BEGIN
       'pending',
       'pending',
       'received',
-      previous_day_timestamp
+      within_24_hours_timestamp
     FROM public.cities
     WHERE public.cities.slug = 'posadas';
 
-    INSERT INTO private.report_submission_rate_events (
+    INSERT INTO posadas_reporta_private.report_submission_rate_events (
       submission_id,
       rate_limit_key,
       created_at
     )
-    VALUES (generated_request_id, rate_key, previous_day_timestamp);
+    VALUES (generated_request_id, rate_key, within_24_hours_timestamp);
   END LOOP;
 
   BEGIN
@@ -321,7 +438,7 @@ BEGIN
   ) AS source(submission_id)
   WHERE public.cities.slug = 'posadas';
 
-  INSERT INTO private.report_submission_rate_events (
+  INSERT INTO posadas_reporta_private.report_submission_rate_events (
     submission_id, rate_limit_key, created_at
   )
   VALUES
@@ -330,16 +447,16 @@ BEGIN
     (fresh_submission_id, pg_catalog.repeat('f', 64),
       pg_catalog.statement_timestamp() - INTERVAL '47 hours');
 
-  SELECT private.delete_expired_report_submission_rate_events()
+  SELECT posadas_reporta_private.delete_expired_report_submission_rate_events()
   INTO deleted_count;
 
   IF deleted_count < 1
      OR EXISTS (
-       SELECT 1 FROM private.report_submission_rate_events
+       SELECT 1 FROM posadas_reporta_private.report_submission_rate_events
        WHERE submission_id = old_submission_id
      )
      OR NOT EXISTS (
-       SELECT 1 FROM private.report_submission_rate_events
+       SELECT 1 FROM posadas_reporta_private.report_submission_rate_events
        WHERE submission_id = fresh_submission_id
      ) THEN
     RAISE EXCEPTION 'Expired rate-limit identifier cleanup failed';
@@ -378,8 +495,8 @@ BEGIN
 END;
 $test$ LANGUAGE plpgsql;
 
--- La concurrencia real del mismo requestId se prueba además desde dos llamadas
--- simultáneas en tests/e2e/report-submission.spec.ts. El advisory lock y la
--- constraint UNIQUE son las garantías verificadas estructuralmente aquí.
+-- La concurrencia real requiere dos sesiones PostgreSQL simultáneas y debe
+-- ejecutarse desde el runner local/CI de integración. Esta suite transaccional
+-- verifica aquí el advisory lock y la constraint UNIQUE de forma estructural.
 
 ROLLBACK;

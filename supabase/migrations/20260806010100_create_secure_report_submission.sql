@@ -75,12 +75,12 @@ ALTER TABLE public.reports
       OR (submission_id IS NOT NULL AND submission_fingerprint IS NOT NULL)
     );
 
-CREATE SCHEMA IF NOT EXISTS private AUTHORIZATION postgres;
+CREATE SCHEMA IF NOT EXISTS posadas_reporta_private AUTHORIZATION postgres;
 REVOKE ALL PRIVILEGES
-ON SCHEMA private
+ON SCHEMA posadas_reporta_private
 FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE TABLE private.report_submission_rate_events (
+CREATE TABLE posadas_reporta_private.report_submission_rate_events (
   submission_id uuid NOT NULL,
   rate_limit_key text NOT NULL,
   created_at timestamp with time zone DEFAULT pg_catalog.statement_timestamp() NOT NULL,
@@ -93,17 +93,20 @@ CREATE TABLE private.report_submission_rate_events (
     CHECK (rate_limit_key ~ '^[0-9a-f]{64}$'::text)
 );
 
-ALTER TABLE private.report_submission_rate_events OWNER TO postgres;
-ALTER TABLE private.report_submission_rate_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE posadas_reporta_private.report_submission_rate_events OWNER TO postgres;
+ALTER TABLE posadas_reporta_private.report_submission_rate_events ENABLE ROW LEVEL SECURITY;
 
 CREATE INDEX report_submission_rate_events_key_created_at_idx
-ON private.report_submission_rate_events USING btree (rate_limit_key, created_at DESC);
+ON posadas_reporta_private.report_submission_rate_events USING btree (rate_limit_key, created_at DESC);
+
+CREATE INDEX report_submission_rate_events_created_at_idx
+ON posadas_reporta_private.report_submission_rate_events USING btree (created_at);
 
 REVOKE ALL PRIVILEGES
-ON TABLE private.report_submission_rate_events
+ON TABLE posadas_reporta_private.report_submission_rate_events
 FROM PUBLIC, anon, authenticated, service_role;
 
-CREATE FUNCTION private.delete_expired_report_submission_rate_events()
+CREATE FUNCTION posadas_reporta_private.delete_expired_report_submission_rate_events()
 RETURNS bigint
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -112,8 +115,8 @@ AS $function$
 DECLARE
   deleted_count bigint;
 BEGIN
-  DELETE FROM private.report_submission_rate_events
-  WHERE private.report_submission_rate_events.created_at
+  DELETE FROM posadas_reporta_private.report_submission_rate_events
+  WHERE posadas_reporta_private.report_submission_rate_events.created_at
     < pg_catalog.statement_timestamp() - INTERVAL '48 hours';
 
   GET DIAGNOSTICS deleted_count = ROW_COUNT;
@@ -121,11 +124,11 @@ BEGIN
 END;
 $function$;
 
-ALTER FUNCTION private.delete_expired_report_submission_rate_events()
+ALTER FUNCTION posadas_reporta_private.delete_expired_report_submission_rate_events()
 OWNER TO postgres;
 
 REVOKE ALL PRIVILEGES
-ON FUNCTION private.delete_expired_report_submission_rate_events()
+ON FUNCTION posadas_reporta_private.delete_expired_report_submission_rate_events()
 FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE FUNCTION public.submit_report_v1(
@@ -159,6 +162,7 @@ DECLARE
   count_24_hours bigint;
   inserted_tracking_code text;
   inserted_created_at timestamp with time zone;
+  conflicting_constraint text;
 BEGIN
   IF p_submission_id IS NULL THEN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'INVALID_SUBMISSION';
@@ -184,6 +188,49 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'INVALID_SUBMISSION';
   END IF;
 
+  canonical_content := pg_catalog.jsonb_build_object(
+    'categoryId', p_category_id,
+    'citySlug', normalized_city_slug,
+    'description', normalized_description,
+    'latitude', p_latitude,
+    'longitude', p_longitude,
+    'subcategoryId', p_subcategory_id,
+    'urgency', p_urgency
+  )::text;
+
+  content_fingerprint := pg_catalog.encode(
+    extensions.digest(
+      pg_catalog.convert_to(canonical_content, 'UTF8'),
+      'sha256'::text
+    ),
+    'hex'::text
+  );
+
+  PERFORM pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(p_submission_id::text, 0)
+  );
+
+  SELECT public.reports.*
+  INTO existing_report
+  FROM public.reports
+  WHERE public.reports.submission_id = p_submission_id;
+
+  IF FOUND THEN
+    IF existing_report.submission_fingerprint IS DISTINCT FROM content_fingerprint THEN
+      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'IDEMPOTENCY_CONFLICT';
+    END IF;
+
+    RETURN QUERY
+    SELECT
+      existing_report.tracking_code,
+      existing_report.created_at,
+      'received'::text;
+    RETURN;
+  END IF;
+
+  -- La idempotencia se resuelve antes de consultar configuración mutable. Un
+  -- reintento de una operación ya confirmada debe conservar su comprobante
+  -- aunque luego cambien la ciudad, sus límites o el catálogo.
   SELECT public.cities.*
   INTO city_record
   FROM public.cities
@@ -228,46 +275,6 @@ BEGIN
     RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'INVALID_SUBMISSION';
   END IF;
 
-  canonical_content := pg_catalog.jsonb_build_object(
-    'categoryId', p_category_id,
-    'citySlug', normalized_city_slug,
-    'description', normalized_description,
-    'latitude', p_latitude,
-    'longitude', p_longitude,
-    'subcategoryId', p_subcategory_id,
-    'urgency', p_urgency
-  )::text;
-
-  content_fingerprint := pg_catalog.encode(
-    extensions.digest(
-      pg_catalog.convert_to(canonical_content, 'UTF8'),
-      'sha256'::text
-    ),
-    'hex'::text
-  );
-
-  PERFORM pg_catalog.pg_advisory_xact_lock(
-    pg_catalog.hashtextextended(p_submission_id::text, 0)
-  );
-
-  SELECT public.reports.*
-  INTO existing_report
-  FROM public.reports
-  WHERE public.reports.submission_id = p_submission_id;
-
-  IF FOUND THEN
-    IF existing_report.submission_fingerprint IS DISTINCT FROM content_fingerprint THEN
-      RAISE EXCEPTION USING ERRCODE = '23505', MESSAGE = 'IDEMPOTENCY_CONFLICT';
-    END IF;
-
-    RETURN QUERY
-    SELECT
-      existing_report.tracking_code,
-      existing_report.created_at,
-      'received'::text;
-    RETURN;
-  END IF;
-
   -- Serializa las solicitudes de un mismo identificador pseudónimo para que
   -- el conteo y el incremento de las dos ventanas móviles sean atómicos.
   PERFORM pg_catalog.pg_advisory_xact_lock(
@@ -276,17 +283,17 @@ BEGIN
 
   SELECT
     pg_catalog.count(*) FILTER (
-      WHERE private.report_submission_rate_events.created_at
+      WHERE posadas_reporta_private.report_submission_rate_events.created_at
         > pg_catalog.statement_timestamp() - INTERVAL '15 minutes'
     ),
     pg_catalog.count(*) FILTER (
-      WHERE private.report_submission_rate_events.created_at
+      WHERE posadas_reporta_private.report_submission_rate_events.created_at
         > pg_catalog.statement_timestamp() - INTERVAL '24 hours'
     )
   INTO count_15_minutes, count_24_hours
-  FROM private.report_submission_rate_events
-  WHERE private.report_submission_rate_events.rate_limit_key = p_rate_limit_key
-    AND private.report_submission_rate_events.created_at
+  FROM posadas_reporta_private.report_submission_rate_events
+  WHERE posadas_reporta_private.report_submission_rate_events.rate_limit_key = p_rate_limit_key
+    AND posadas_reporta_private.report_submission_rate_events.created_at
       > pg_catalog.statement_timestamp() - INTERVAL '24 hours';
 
   IF count_15_minutes >= 5 OR count_24_hours >= 20 THEN
@@ -326,7 +333,7 @@ BEGIN
   RETURNING public.reports.tracking_code, public.reports.created_at
   INTO inserted_tracking_code, inserted_created_at;
 
-  INSERT INTO private.report_submission_rate_events (
+  INSERT INTO posadas_reporta_private.report_submission_rate_events (
     submission_id,
     rate_limit_key,
     created_at
@@ -341,6 +348,12 @@ BEGIN
   SELECT inserted_tracking_code, inserted_created_at, 'received'::text;
 EXCEPTION
   WHEN unique_violation THEN
+    GET STACKED DIAGNOSTICS conflicting_constraint = CONSTRAINT_NAME;
+
+    IF conflicting_constraint IS DISTINCT FROM 'reports_submission_id_key' THEN
+      RAISE;
+    END IF;
+
     SELECT public.reports.*
     INTO existing_report
     FROM public.reports
@@ -379,7 +392,7 @@ TO service_role;
 SELECT cron.schedule(
   'posadas-reporta-rate-limit-cleanup',
   '23 * * * *',
-  $cron$SELECT private.delete_expired_report_submission_rate_events();$cron$
+  $cron$SELECT posadas_reporta_private.delete_expired_report_submission_rate_events();$cron$
 )
 WHERE NOT EXISTS (
   SELECT 1
@@ -395,7 +408,7 @@ BEGIN
     WHERE cron.job.jobname = 'posadas-reporta-rate-limit-cleanup'
       AND cron.job.schedule = '23 * * * *'
       AND cron.job.command =
-        'SELECT private.delete_expired_report_submission_rate_events();'
+        'SELECT posadas_reporta_private.delete_expired_report_submission_rate_events();'
   ) THEN
     RAISE EXCEPTION 'Phase 2 aborted: rate-limit cleanup job validation failed';
   END IF;

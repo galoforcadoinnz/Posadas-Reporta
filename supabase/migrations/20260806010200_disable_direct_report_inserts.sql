@@ -90,4 +90,12 @@ REVOKE ALL PRIVILEGES
 ON FUNCTION public.prepare_report_initial_values()
 FROM PUBLIC, anon, authenticated, service_role;
 
+REVOKE ALL PRIVILEGES
+ON FUNCTION public.generate_report_tracking_code()
+FROM PUBLIC, anon, authenticated, service_role;
+
+REVOKE ALL PRIVILEGES
+ON FUNCTION public.set_updated_at()
+FROM PUBLIC, anon, authenticated, service_role;
+
 COMMIT;
