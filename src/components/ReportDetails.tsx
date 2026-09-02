@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Category } from '../types/category'
+import type { Category, Subcategory } from '../types/category'
 import type {
   ReportDetailsDraft,
   ReportLocation,
@@ -12,6 +12,7 @@ const ALLOWED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 type ReportDetailsProps = {
   location: ReportLocation
   category: Category
+  subcategory: Subcategory | null
   details: ReportDetailsDraft
   onChange: (changes: Partial<ReportDetailsDraft>) => void
   onContinue: () => void
@@ -21,6 +22,7 @@ type ReportDetailsProps = {
 function ReportDetails({
   location,
   category,
+  subcategory,
   details,
   onChange,
   onContinue,
@@ -132,6 +134,13 @@ function ReportDetails({
           </span>
 
         </div>
+
+        {subcategory && (
+          <div className="summary-item">
+            <strong>🔎 Tipo</strong>
+            <span>{subcategory.name}</span>
+          </div>
+        )}
 
       </div>
 

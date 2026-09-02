@@ -5,7 +5,7 @@ import ReportPreview from './components/ReportPreview'
 import ReportSuccess from './components/ReportSuccess'
 import { env } from './config/env'
 import { useReportSubmission } from './hooks/useReportSubmission'
-import type { Category } from './types/category'
+import type { Category, Subcategory } from './types/category'
 import type {
   ReportDetailsDraft,
   ReportDraft,
@@ -17,6 +17,7 @@ const MapView = lazy(() => import('./components/MapView'))
 const INITIAL_REPORT_DRAFT: ReportDraft = {
   location: null,
   category: null,
+  subcategory: null,
   description: '',
   photo: null,
   urgency: 'medium',
@@ -47,12 +48,14 @@ function App() {
   }
 
   const handleCategoryContinue = (
-    category: Category
+    category: Category,
+    subcategory: Subcategory | null
   ) => {
     submission.invalidateRequest()
     setReportDraft((currentDraft) => ({
       ...currentDraft,
       category,
+      subcategory,
     }))
     setReportStep('details')
   }
@@ -100,7 +103,7 @@ function App() {
       turnstileToken,
       citySlug: env.citySlug,
       categoryId: reportDraft.category.id,
-      subcategoryId: null,
+      subcategoryId: reportDraft.subcategory?.id ?? null,
       description: reportDraft.description.trim(),
       latitude: reportDraft.location.latitude,
       longitude: reportDraft.location.longitude,
@@ -164,6 +167,7 @@ function App() {
           <main>
             <ReportCategory
               initialCategory={reportDraft.category}
+              initialSubcategory={reportDraft.subcategory}
               onContinue={handleCategoryContinue}
               onBack={handleBackToMap}
             />
@@ -177,6 +181,7 @@ function App() {
             <ReportDetails
               location={reportDraft.location}
               category={reportDraft.category}
+              subcategory={reportDraft.subcategory}
               details={reportDraft}
               onChange={handleDetailsChange}
               onContinue={handleDetailsContinue}
@@ -192,6 +197,7 @@ function App() {
             <ReportPreview
               location={reportDraft.location}
               category={reportDraft.category}
+              subcategory={reportDraft.subcategory}
               description={reportDraft.description}
               photo={reportDraft.photo}
               urgency={reportDraft.urgency}

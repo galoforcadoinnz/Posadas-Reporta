@@ -1,4 +1,4 @@
-import type { Category } from './category'
+import type { Category, Subcategory } from './category'
 
 export type Urgency = 'low' | 'medium' | 'high'
 
@@ -29,4 +29,5 @@ export type ReportDetailsDraft = {
 export type ReportDraft = ReportDetailsDraft & {
   location: ReportLocation | null
   category: Category | null
+  subcategory: Subcategory | null
 }

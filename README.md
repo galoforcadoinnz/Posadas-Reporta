@@ -11,6 +11,7 @@ El MVP permite:
 - seleccionar una ubicación manualmente en el mapa;
 - solicitar la ubicación del navegador;
 - cargar categorías activas desde Supabase;
+- elegir una subcategoría activa opcional cuando el catálogo la ofrece;
 - completar una descripción y nivel de urgencia;
 - seleccionar una fotografía para previsualización local;
 - revisar el borrador antes de confirmarlo;
@@ -92,7 +93,7 @@ npm run preview
 ## Flujo del reporte
 
 1. Selección de ubicación en Leaflet/OpenStreetMap.
-2. Selección de una categoría obtenida desde Supabase.
+2. Selección de una categoría y, cuando corresponda, una subcategoría opcional obtenidas desde Supabase.
 3. Carga de descripción, urgencia y fotografía local opcional.
 4. Previsualización del borrador.
 5. Verificación Turnstile y envío mediante la Edge Function `submit-report`.
@@ -140,7 +141,6 @@ Este prototipo todavía no es apto para producción:
 - CI ejecuta pruebas SQL transaccionales en PostgreSQL efímero, Deno, React,
   una integración handler Edge→RPC y un E2E interceptado; todavía falta cubrir
   localmente la capa real de gateway/PostgREST;
-- los iconos de marcador de Leaflet dependen actualmente de `unpkg`;
 - el tile server público de OpenStreetMap no debe tratarse como infraestructura productiva ilimitada.
 
 ## Validación obligatoria
