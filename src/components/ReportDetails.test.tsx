@@ -12,6 +12,7 @@ const baseProps = {
     is_active: true,
     created_at: '2026-08-06T00:00:00.000Z',
   },
+  subcategory: null,
   details: {
     description: 'Descripción válida del problema',
     photo: null,

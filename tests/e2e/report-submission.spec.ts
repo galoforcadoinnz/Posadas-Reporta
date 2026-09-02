@@ -69,6 +69,19 @@ test('completes the secure flow without a direct reports POST', async ({ page })
           reporting_max_longitude: -55,
         }),
       })
+    } else if (url.includes('/subcategories')) {
+      await route.fulfill({
+        contentType: 'application/json',
+        headers: corsHeaders,
+        body: JSON.stringify([{
+          id: '40000000-0000-4000-8000-000000000001',
+          category_id: '30000000-0000-4000-8000-000000000001',
+          name: 'Bache en calzada',
+          description: 'Rotura sobre una calle transitable',
+          is_active: true,
+          created_at: '2026-08-06T00:00:00.000Z',
+        }]),
+      })
     } else if (url.includes('/categories')) {
       await route.fulfill({
         contentType: 'application/json',
@@ -96,6 +109,7 @@ test('completes the secure flow without a direct reports POST', async ({ page })
     expect(body).not.toHaveProperty('photo')
     expect(body).not.toHaveProperty('status')
     expect(body.turnstileToken).toBe('XXXX.DUMMY.TOKEN.XXXX')
+    expect(body.subcategoryId).toBe('40000000-0000-4000-8000-000000000001')
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
@@ -112,6 +126,7 @@ test('completes the secure flow without a direct reports POST', async ({ page })
   await page.getByRole('button', { name: '📍 Usar mi ubicación' }).click()
   await page.getByRole('button', { name: 'Continuar →' }).click()
   await page.getByRole('button', { name: /Baches/ }).click()
+  await page.getByLabel(/Bache en calzada/).click()
   await page.getByRole('button', { name: 'Continuar →' }).click()
   await page.getByLabel('¿Qué está pasando?').fill('Hay un bache peligroso en la calzada')
   await page.getByRole('button', { name: 'Ver resumen →' }).click()

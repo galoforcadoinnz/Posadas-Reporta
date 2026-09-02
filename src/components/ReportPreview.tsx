@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import type { Category } from '../types/category'
+import type { Category, Subcategory } from '../types/category'
 import type { ReportLocation, Urgency } from '../types/report'
 import TurnstileWidget from './TurnstileWidget'
 
 type ReportPreviewProps = {
   location: ReportLocation
   category: Category
+  subcategory: Subcategory | null
   description: string
   photo: File | null
   urgency: Urgency
@@ -58,6 +59,7 @@ function ReportPhotoPreview({ photo }: { photo: File }) {
 function ReportPreview({
   location,
   category,
+  subcategory,
   description,
   photo,
   urgency,
@@ -141,6 +143,13 @@ function ReportPreview({
           </p>
 
         </div>
+
+        {subcategory && (
+          <div className="preview-item">
+            <strong>🔎 Tipo de problema</strong>
+            <p>{subcategory.name}</p>
+          </div>
+        )}
 
         <div className="preview-item">
 
