@@ -4,31 +4,27 @@ import ReportDetails from './components/ReportDetails'
 import ReportPreview from './components/ReportPreview'
 import ReportSuccess from './components/ReportSuccess'
 import { env } from './config/env'
+import { useReportDraft } from './hooks/useReportDraft'
 import { useReportSubmission } from './hooks/useReportSubmission'
 import type { Category, Subcategory } from './types/category'
-import type {
-  ReportDetailsDraft,
-  ReportDraft,
-  ReportStep,
-} from './types/report'
+import type { ReportDetailsDraft } from './types/report'
 
 const MapView = lazy(() => import('./components/MapView'))
 
-const INITIAL_REPORT_DRAFT: ReportDraft = {
-  location: null,
-  category: null,
-  subcategory: null,
-  description: '',
-  photo: null,
-  urgency: 'medium',
-}
-
 function App() {
-  const [reportStep, setReportStep] =
-    useState<ReportStep>('map')
-
-  const [reportDraft, setReportDraft] =
-    useState<ReportDraft>(INITIAL_REPORT_DRAFT)
+  const {
+    reportStep,
+    reportDraft,
+    selectLocation,
+    selectCategory,
+    updateDetails,
+    completeDetails,
+    backToMap,
+    backToCategory,
+    backToDetails,
+    markSubmissionSucceeded,
+    resetDraft,
+  } = useReportDraft()
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const submission = useReportSubmission()
@@ -39,12 +35,7 @@ function App() {
   ) => {
     submission.invalidateRequest()
 
-    setReportDraft((currentDraft) => ({
-      ...currentDraft,
-      location: { latitude, longitude },
-    }))
-
-    setReportStep('category')
+    selectLocation({ latitude, longitude })
   }
 
   const handleCategoryContinue = (
@@ -52,38 +43,30 @@ function App() {
     subcategory: Subcategory | null
   ) => {
     submission.invalidateRequest()
-    setReportDraft((currentDraft) => ({
-      ...currentDraft,
-      category,
-      subcategory,
-    }))
-    setReportStep('details')
+    selectCategory(category, subcategory)
   }
 
   const handleDetailsChange = (
     changes: Partial<ReportDetailsDraft>
   ) => {
     submission.invalidateRequest()
-    setReportDraft((currentDraft) => ({
-      ...currentDraft,
-      ...changes,
-    }))
+    updateDetails(changes)
   }
 
   const handleDetailsContinue = () => {
-    setReportStep('preview')
+    completeDetails()
   }
 
   const handleBackToMap = () => {
-    setReportStep('map')
+    backToMap()
   }
 
   const handleBackToCategory = () => {
-    setReportStep('category')
+    backToCategory()
   }
 
   const handleBackToDetails = () => {
-    setReportStep('details')
+    backToDetails()
   }
 
   const handleConfirmReport = async () => {
@@ -112,15 +95,14 @@ function App() {
 
     setTurnstileToken(null)
     if (receipt) {
-      setReportStep('success')
+      markSubmissionSucceeded()
     }
   }
 
   const handleCreateAnotherReport = () => {
     submission.reset()
     setTurnstileToken(null)
-    setReportDraft(INITIAL_REPORT_DRAFT)
-    setReportStep('map')
+    resetDraft()
   }
 
   return (
