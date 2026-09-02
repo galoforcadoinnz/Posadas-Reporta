@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test('completes the secure flow without a direct reports POST', async ({ page }) => {
   let directReportsPosts = 0
+  let unpkgRequests = 0
   const corsHeaders = {
     'Access-Control-Allow-Origin': 'http://127.0.0.1:4173',
     'Access-Control-Allow-Headers':
@@ -39,7 +40,10 @@ test('completes the secure flow without a direct reports POST', async ({ page })
       body: `window.turnstile={ready:(cb)=>cb(),render:(container,params)=>{setTimeout(()=>params.callback('XXXX.DUMMY.TOKEN.XXXX'),0);return 'widget'},reset:()=>{},remove:()=>{},getResponse:()=>'',isExpired:()=>false};`,
     }))
   await page.route('https://*.tile.openstreetmap.org/**', (route) => route.abort())
-  await page.route('https://unpkg.com/**', (route) => route.abort())
+  await page.route('https://unpkg.com/**', (route) => {
+    unpkgRequests += 1
+    return route.abort()
+  })
 
   await page.route('http://127.0.0.1:54321/rest/v1/**', async (route) => {
     const url = route.request().url()
@@ -117,4 +121,5 @@ test('completes the secure flow without a direct reports POST', async ({ page })
   await expect(page.getByRole('heading', { name: '✅ Reporte recibido' })).toBeVisible()
   await expect(page.getByText('PR-0123456789ABCDEF0123')).toBeVisible()
   expect(directReportsPosts).toBe(0)
+  expect(unpkgRequests).toBe(0)
 })
