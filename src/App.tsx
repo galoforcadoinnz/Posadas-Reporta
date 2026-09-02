@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import MapView from './components/MapView'
+import { lazy, Suspense, useState } from 'react'
 import ReportCategory from './components/ReportCategory'
 import ReportDetails from './components/ReportDetails'
 import ReportPreview from './components/ReportPreview'
@@ -12,6 +11,8 @@ import type {
   ReportDraft,
   ReportStep,
 } from './types/report'
+
+const MapView = lazy(() => import('./components/MapView'))
 
 const INITIAL_REPORT_DRAFT: ReportDraft = {
   location: null,
@@ -142,11 +143,19 @@ function App() {
             </p>
           </section>
 
-          <MapView
-            citySlug={env.citySlug}
-            initialLocation={reportDraft.location}
-            onContinue={handleLocationContinue}
-          />
+          <Suspense
+            fallback={(
+              <p className="map-instruction" role="status">
+                Cargando mapa…
+              </p>
+            )}
+          >
+            <MapView
+              citySlug={env.citySlug}
+              initialLocation={reportDraft.location}
+              onContinue={handleLocationContinue}
+            />
+          </Suspense>
         </main>
       )}
 

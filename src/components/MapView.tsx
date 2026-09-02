@@ -7,6 +7,9 @@ import {
 } from 'react-leaflet'
 
 import L from 'leaflet'
+import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
+import markerIcon2xUrl from 'leaflet/dist/images/marker-icon-2x.png'
+import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
 import { useEffect, useState } from 'react'
 import { getActiveCity } from '../services/cities'
 import type { CityReportingBounds } from '../types/city'
@@ -14,7 +17,7 @@ import type { ReportLocation } from '../types/report'
 
 import 'leaflet/dist/leaflet.css'
 
-// Configuración de los iconos de Leaflet
+// Empaquetar los iconos evita depender de un CDN externo durante el uso del mapa.
 const defaultIconPrototype = L.Icon.Default.prototype as {
   _getIconUrl?: () => string
 }
@@ -22,14 +25,9 @@ const defaultIconPrototype = L.Icon.Default.prototype as {
 delete defaultIconPrototype._getIconUrl
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-
-  iconUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-
-  shadowUrl:
-    'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconRetinaUrl: markerIcon2xUrl,
+  iconUrl: markerIconUrl,
+  shadowUrl: markerShadowUrl,
 })
 
 // Centro de Posadas
