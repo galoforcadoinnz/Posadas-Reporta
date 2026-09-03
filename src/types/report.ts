@@ -20,9 +20,18 @@ export type ReportReceipt = {
   status: 'received'
 }
 
+export type ReportPhotoDraft = {
+  file: File
+  sha256: string
+  byteSize: number
+  width: number
+  height: number
+  mimeType: 'image/webp'
+}
+
 export type ReportDetailsDraft = {
   description: string
-  photo: File | null
+  photo: ReportPhotoDraft | null
   urgency: Urgency
 }
 

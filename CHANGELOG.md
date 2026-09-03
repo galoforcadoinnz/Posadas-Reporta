@@ -10,6 +10,10 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
   Edge, bucket privado, moderación obligatoria y consistencia ante reintentos.
 - Se definieron límites, amenazas, pruebas y gates independientes antes de
   escribir SQL o modificar Supabase remoto.
+- El navegador recodifica JPEG, PNG o WebP a un WebP sin metadatos, limita
+  dimensiones y tamaño, utiliza un nombre neutro y calcula SHA-256.
+- El borrador conserva únicamente la versión normalizada; la fotografía aún no
+  se envía ni se almacena.
 
 ### Fase 2 — Envío público seguro (implementación local)
 

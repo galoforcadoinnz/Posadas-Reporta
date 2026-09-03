@@ -129,7 +129,18 @@ test('completes the secure flow without a direct reports POST', async ({ page })
   await page.getByLabel(/Bache en calzada/).click()
   await page.getByRole('button', { name: 'Continuar →' }).click()
   await page.getByLabel('¿Qué está pasando?').fill('Hay un bache peligroso en la calzada')
+  await page.getByLabel('📸 Agregar una fotografía').setInputFiles({
+    name: 'camera-with-metadata.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      'base64'
+    ),
+  })
+  await expect(page.getByText(/Fotografía preparada/)).toBeVisible()
   await page.getByRole('button', { name: 'Ver resumen →' }).click()
+  await expect(page.getByRole('img', { name: 'Vista previa del reporte' }))
+    .toBeVisible()
   const confirm = page.getByRole('button', { name: '✅ Confirmar reporte' })
   await expect(confirm).toBeEnabled()
   await confirm.click()

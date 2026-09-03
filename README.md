@@ -13,14 +13,16 @@ El MVP permite:
 - cargar categorías activas desde Supabase;
 - elegir una subcategoría activa opcional cuando el catálogo la ofrece;
 - completar una descripción y nivel de urgencia;
-- seleccionar una fotografía para previsualización local;
+- seleccionar una fotografía, recodificarla localmente como WebP y
+  previsualizar únicamente la versión normalizada;
 - revisar el borrador antes de confirmarlo;
 - conservar los datos al avanzar y volver entre pasos;
 - crear un reporte mediante el servicio Supabase existente.
 - preparar el envío seguro y mostrar su código de seguimiento cuando la Fase 2
   sea aplicada en un entorno autorizado.
 
-La fotografía seleccionada no se sube ni se guarda. La interfaz lo informa antes de confirmar.
+La fotografía normalizada no se sube ni se guarda todavía. La interfaz lo
+informa antes de confirmar y el archivo original no forma parte del borrador.
 
 ## Tecnologías
 

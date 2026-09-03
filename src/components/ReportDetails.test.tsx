@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import * as photoService from '../services/photos'
 import ReportDetails from './ReportDetails'
 
 const baseProps = {
@@ -23,7 +24,7 @@ const baseProps = {
 }
 
 describe('ReportDetails photo validation', () => {
-  it('rejects an unsupported image type before previewing it', () => {
+  it('rejects an unsupported image type before previewing it', async () => {
     const onChange = vi.fn()
     render(<ReportDetails {...baseProps} onChange={onChange} />)
     const file = new File(['svg'], 'unsafe.svg', { type: 'image/svg+xml' })
@@ -32,11 +33,11 @@ describe('ReportDetails photo validation', () => {
       target: { files: [file] },
     })
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/JPEG, PNG o WebP/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/JPEG, PNG o WebP/i)
     expect(onChange).toHaveBeenCalledWith({ photo: null })
   })
 
-  it('rejects a photo larger than 10 MB', () => {
+  it('rejects a photo larger than 10 MB', async () => {
     const onChange = vi.fn()
     render(<ReportDetails {...baseProps} onChange={onChange} />)
     const file = new File(['photo'], 'large.jpg', { type: 'image/jpeg' })
@@ -46,7 +47,35 @@ describe('ReportDetails photo validation', () => {
       target: { files: [file] },
     })
 
-    expect(screen.getByRole('alert')).toHaveTextContent(/10 MB/i)
+    expect(await screen.findByRole('alert')).toHaveTextContent(/10 MB/i)
     expect(onChange).toHaveBeenCalledWith({ photo: null })
+  })
+
+  it('stores only the normalized photo after processing completes', async () => {
+    const normalizedPhoto = {
+      file: new File(['webp'], 'report-photo.webp', { type: 'image/webp' }),
+      sha256: 'a'.repeat(64),
+      byteSize: 4,
+      width: 800,
+      height: 600,
+      mimeType: 'image/webp' as const,
+    }
+    vi.spyOn(photoService, 'normalizeReportPhoto')
+      .mockResolvedValue(normalizedPhoto)
+    const onChange = vi.fn()
+    render(<ReportDetails {...baseProps} onChange={onChange} />)
+
+    fireEvent.change(screen.getByLabelText('📸 Agregar una fotografía'), {
+      target: {
+        files: [new File(['jpeg'], 'camera.jpg', { type: 'image/jpeg' })],
+      },
+    })
+
+    expect(screen.getByRole('status')).toHaveTextContent(/preparando/i)
+    expect(screen.getByRole('button', { name: 'Ver resumen →' }))
+      .toBeDisabled()
+    await waitFor(() => {
+      expect(onChange).toHaveBeenLastCalledWith({ photo: normalizedPhoto })
+    })
   })
 })

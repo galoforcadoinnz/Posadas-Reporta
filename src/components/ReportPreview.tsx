@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Category, Subcategory } from '../types/category'
-import type { ReportLocation, Urgency } from '../types/report'
+import type { ReportLocation, ReportPhotoDraft, Urgency } from '../types/report'
 import TurnstileWidget from './TurnstileWidget'
 
 type ReportPreviewProps = {
@@ -8,7 +8,7 @@ type ReportPreviewProps = {
   category: Category
   subcategory: Subcategory | null
   description: string
-  photo: File | null
+  photo: ReportPhotoDraft | null
   urgency: Urgency
   isSubmitting: boolean
   submissionError: string | null
@@ -19,7 +19,7 @@ type ReportPreviewProps = {
   onConfirm: () => void
 }
 
-function ReportPhotoPreview({ photo }: { photo: File }) {
+function ReportPhotoPreview({ photo }: { photo: ReportPhotoDraft }) {
   const [source, setSource] = useState<string | null>(null)
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function ReportPhotoPreview({ photo }: { photo: File }) {
     }
 
     reader.addEventListener('load', handleLoad)
-    reader.readAsDataURL(photo)
+    reader.readAsDataURL(photo.file)
 
     return () => {
       reader.removeEventListener('load', handleLoad)
@@ -190,7 +190,7 @@ function ReportPreview({
             </strong>
 
             <ReportPhotoPreview
-              key={`${photo.name}-${photo.size}-${photo.lastModified}`}
+              key={photo.sha256}
               photo={photo}
             />
 
