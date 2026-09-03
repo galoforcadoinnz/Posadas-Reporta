@@ -158,6 +158,14 @@ Antes de adoptar la dependencia se requiere:
 - demostrar que la salida no contiene EXIF, XMP ni chunks desconocidos;
 - fallar cerrada si la decodificación o recodificación no termina.
 
+La evaluación local vigente está documentada en
+[`PHASE_3_IMAGE_PROCESSOR_EVALUATION.md`](./PHASE_3_IMAGE_PROCESSOR_EVALUATION.md).
+El Gate B está aprobado únicamente para integración local con
+`@imagemagick/magick-wasm@0.0.43`, configuración WebP acotada y límites de
+recursos. La alternativa jSquash evaluada fue rechazada porque empaqueta una
+versión vulnerable de libwebp. El bundle con Supabase CLI y el canary de staging
+siguen siendo gates independientes.
+
 Si el procesamiento no cumple los límites de Edge Functions, la Fase 3 se
 detiene. No se almacenará temporalmente el original como atajo.
 
