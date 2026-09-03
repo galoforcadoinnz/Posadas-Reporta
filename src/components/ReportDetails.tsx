@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import {
+  normalizeReportPhoto,
+  PhotoNormalizationError,
+} from '../services/photos'
 import type { Category, Subcategory } from '../types/category'
 import type {
   ReportDetailsDraft,
   ReportLocation,
   Urgency,
 } from '../types/report'
-
-const MAX_PHOTO_BYTES = 10 * 1024 * 1024
-const ALLOWED_PHOTO_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 type ReportDetailsProps = {
   location: ReportLocation
@@ -32,30 +33,61 @@ function ReportDetails({
   const [validationError, setValidationError] =
     useState<string | null>(null)
   const [photoError, setPhotoError] = useState<string | null>(null)
+  const [isProcessingPhoto, setIsProcessingPhoto] = useState(false)
+  const photoSelection = useRef(0)
 
-  const handlePhotoChange = (
+  useEffect(() => () => {
+    photoSelection.current += 1
+  }, [])
+
+  const messageForPhotoError = (error: unknown) => {
+    if (!(error instanceof PhotoNormalizationError)) {
+      return 'No se pudo preparar la fotografía. Probá con otra imagen.'
+    }
+
+    switch (error.code) {
+      case 'UNSUPPORTED_TYPE':
+        return 'La fotografía debe ser JPEG, PNG o WebP.'
+      case 'INPUT_TOO_LARGE':
+        return 'La fotografía no puede superar los 10 MB.'
+      case 'INVALID_DIMENSIONS':
+        return 'La fotografía tiene dimensiones demasiado grandes o inválidas.'
+      case 'OUTPUT_TOO_LARGE':
+        return 'La fotografía no pudo reducirse al límite seguro de 2 MB.'
+      case 'DECODE_FAILED':
+      case 'ENCODE_FAILED':
+        return 'La fotografía está dañada o el navegador no puede procesarla.'
+    }
+  }
+
+  const handlePhotoChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-
-    const file = event.target.files?.[0] || null
-
-    if (file && !ALLOWED_PHOTO_TYPES.has(file.type)) {
-      event.target.value = ''
-      setPhotoError('La fotografía debe ser JPEG, PNG o WebP.')
-      onChange({ photo: null })
-      return
-    }
-
-    if (file && file.size > MAX_PHOTO_BYTES) {
-      event.target.value = ''
-      setPhotoError('La fotografía no puede superar los 10 MB.')
-      onChange({ photo: null })
-      return
-    }
-
+    const input = event.currentTarget
+    const file = input.files?.[0] ?? null
+    const selection = photoSelection.current + 1
+    photoSelection.current = selection
     setPhotoError(null)
-    onChange({ photo: file })
+    onChange({ photo: null })
 
+    if (!file) return
+
+    input.value = ''
+    setIsProcessingPhoto(true)
+    try {
+      const photo = await normalizeReportPhoto(file)
+      if (photoSelection.current === selection) {
+        onChange({ photo })
+      }
+    } catch (error) {
+      if (photoSelection.current === selection) {
+        setPhotoError(messageForPhotoError(error))
+      }
+    } finally {
+      if (photoSelection.current === selection) {
+        setIsProcessingPhoto(false)
+      }
+    }
   }
 
   const handleContinue = () => {
@@ -193,18 +225,21 @@ function ReportDetails({
           type="file"
           accept="image/jpeg,image/png,image/webp"
           capture="environment"
+          disabled={isProcessingPhoto}
           onChange={handlePhotoChange}
         />
 
-        {details.photo && (
+        {isProcessingPhoto && (
+          <p className="photo-selected" role="status">
+            Preparando fotografía segura…
+          </p>
+        )}
+
+        {details.photo && !isProcessingPhoto && (
 
           <p className="photo-selected">
 
-            📷 Foto seleccionada:
-
-            {' '}
-
-            {details.photo.name}
+            📷 Fotografía preparada ({Math.ceil(details.photo.byteSize / 1024)} KB)
 
           </p>
 
@@ -286,6 +321,7 @@ function ReportDetails({
           type="button"
           className="continue-button"
           onClick={handleContinue}
+          disabled={isProcessingPhoto}
         >
           Ver resumen →
         </button>
