@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
+    "npm:@imagemagick/magick-wasm@0.0.43": "0.0.43",
     "npm:@supabase/supabase-js@2.112.0": "2.112.0"
   },
   "jsr": {
@@ -17,6 +18,9 @@
     }
   },
   "npm": {
+    "@imagemagick/magick-wasm@0.0.43": {
+      "integrity": "sha512-+Wlr3eEl4JlqLwrhAHBlf4VDzOWiFa8L2hYl7mOMXCgq896KghEnh3Go35nuZJMfmE6lX2waBZdr+u9FVluJLA=="
+    },
     "@supabase/auth-js@2.112.0": {
       "integrity": "sha512-8qAdObNQHKbSeVBLmf2WLNT7+bCE8zBofpCFiNUqGBAl5qw9VagSvcmPXlh78McAU7iHrGik1oeJxiB2A6B29w==",
       "dependencies": [
@@ -72,6 +76,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "npm:@imagemagick/magick-wasm@0.0.43",
       "npm:@supabase/supabase-js@2.112.0"
     ]
   }
