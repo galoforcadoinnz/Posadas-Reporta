@@ -4,6 +4,13 @@ Todos los cambios relevantes de Posadas Reporta se documentan en este archivo.
 
 ## [Unreleased]
 
+### Fase 3 — Fotografías privadas (diseño)
+
+- Se documentó un flujo de capacidad efímera y de un solo uso, saneamiento en
+  Edge, bucket privado, moderación obligatoria y consistencia ante reintentos.
+- Se definieron límites, amenazas, pruebas y gates independientes antes de
+  escribir SQL o modificar Supabase remoto.
+
 ### Fase 2 — Envío público seguro (implementación local)
 
 #### Agregado

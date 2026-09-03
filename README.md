@@ -159,6 +159,8 @@ npm run lint
 - `docs/AUDITORIA_TECNICA_POSADAS_REPORTA_MVP_0_2.md`: auditoría del MVP 0.2.
 - `docs/PHASE_2_PRODUCTION_ROLLOUT_PLAN.md`: gates y recuperación para un
   eventual rollout productivo; no autoriza su ejecución.
+- `docs/PHASE_3_PRIVATE_PHOTO_PLAN.md`: diseño de seguridad y gates para
+  fotografías privadas; no autoriza SQL ni cambios remotos.
 - `CHANGELOG.md`: cambios relevantes del proyecto.
 
 ## Base de datos versionada
