@@ -1,5 +1,6 @@
 {
   "imports": {
+    "@imagemagick/magick-wasm": "npm:@imagemagick/magick-wasm@0.0.43",
     "@std/assert": "jsr:@std/assert@1",
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.112.0"
   },
